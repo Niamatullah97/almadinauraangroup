@@ -1,0 +1,58 @@
+{
+  "name": "kabootar",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pigeon Tournament Management System — monorepo",
+  "scripts": {
+    "build": "turbo run build",
+    "build:api:hostinger": "pnpm db:generate && turbo run build --filter=@kabootar/api...",
+    "deploy:api:hostinger": "pnpm build:api:hostinger && pnpm db:migrate:deploy",
+    "build:web:cloudflare": "pnpm --filter @kabootar/shared build && pnpm --filter @kabootar/web build:cf",
+    "deploy:web:cloudflare": "pnpm --filter @kabootar/shared build && pnpm --filter @kabootar/web deploy:cf",
+    "build:admin:cloudflare": "pnpm --filter @kabootar/shared build && pnpm --filter @kabootar/admin build:cf",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml,html,css,scss}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml,html,css,scss}\"",
+    "test": "turbo run test",
+    "test:ci": "turbo run test:ci",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rimraf node_modules",
+    "prepare": "husky",
+    "db:generate": "pnpm --filter @kabootar/database generate",
+    "db:migrate": "pnpm --filter @kabootar/database migrate:dev",
+    "db:migrate:deploy": "pnpm --filter @kabootar/database migrate:deploy",
+    "db:seed": "pnpm --filter @kabootar/database seed",
+    "db:studio": "pnpm --filter @kabootar/database studio",
+    "docker:up": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d",
+    "docker:down": "docker compose -f docker-compose.yml -f docker-compose.dev.yml down",
+    "docker:prod:up": "docker compose -f docker-compose.prod.yml up -d --build",
+    "docker:prod:down": "docker compose -f docker-compose.prod.yml down",
+    "docker:logs": "docker compose logs -f"
+  },
+  "devDependencies": {
+    "@kabootar/eslint-config": "workspace:*",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3",
+    "prettier": "^3.5.3",
+    "prettier-plugin-organize-imports": "^4.1.0",
+    "rimraf": "^6.0.1",
+    "turbo": "^2.5.0",
+    "typescript": "^5.8.2"
+  },
+  "packageManager": "pnpm@10.6.5",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml,html,css,scss}": [
+      "prettier --write"
+    ]
+  }
+}

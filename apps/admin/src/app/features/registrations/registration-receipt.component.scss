@@ -1,0 +1,63 @@
+@use '../../../styles/variables' as *;
+
+.receipt-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.receipt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+}
+
+.receipt-number {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: $color-text;
+}
+
+.receipt-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $spacing-md;
+}
+
+.receipt-label {
+  display: block;
+  font-size: 0.75rem;
+  color: $color-text-muted;
+  margin-bottom: 0.25rem;
+}
+
+.receipt-payments {
+  h4 {
+    margin: 0 0 $spacing-sm;
+    font-size: 0.9375rem;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.25rem;
+    color: $color-text;
+    font-size: 0.875rem;
+  }
+}
+
+.status-badge--payment-pending {
+  background: $color-bg;
+  color: $color-text-muted;
+}
+
+.status-badge--payment-partial {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.status-badge--payment-paid {
+  background: $color-success-soft;
+  color: $color-success;
+}

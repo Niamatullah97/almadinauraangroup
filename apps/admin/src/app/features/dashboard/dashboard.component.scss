@@ -1,0 +1,88 @@
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
+
+:host {
+  display: block;
+}
+
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xl;
+}
+
+.dashboard__welcome {
+  @include card-surface;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+  padding: $spacing-lg $spacing-xl;
+  background: linear-gradient(135deg, $color-surface 0%, $color-primary-soft 100%);
+
+  @include respond-to(md) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.dashboard__heading {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: $color-text;
+  margin-bottom: $spacing-xs;
+}
+
+.dashboard__description {
+  font-size: 0.9375rem;
+  color: $color-text-muted;
+  max-width: 520px;
+}
+
+.dashboard__refresh {
+  align-self: flex-start;
+  padding: 0.625rem 1rem;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  background: $color-surface;
+  color: $color-primary;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background $transition-fast,
+    border-color $transition-fast;
+
+  @include focus-ring;
+
+  &:hover:not(:disabled) {
+    background: $color-primary-soft;
+    border-color: rgba(37, 99, 235, 0.25);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.dashboard__error {
+  margin: 0;
+  color: $color-danger;
+  font-size: 0.9375rem;
+}
+
+.dashboard__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $spacing-lg;
+
+  @include respond-to(md) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include respond-to(xl) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

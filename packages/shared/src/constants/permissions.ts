@@ -1,0 +1,25 @@
+export { Permission } from '../types/auth';
+
+export const ALL_PERMISSIONS = [
+  'users:read',
+  'users:create',
+  'users:update',
+  'users:delete',
+  'tournaments:read',
+  'tournaments:create',
+  'tournaments:update',
+  'tournaments:delete',
+  'tournaments:publish',
+  'pigeons:read',
+  'pigeons:create',
+  'pigeons:update',
+  'pigeons:delete',
+  'entries:read',
+  'entries:create',
+  'entries:update',
+  'participants:read',
+  'participants:create',
+  'participants:update',
+  'participants:delete',
+  'roles:manage',
+] as const;

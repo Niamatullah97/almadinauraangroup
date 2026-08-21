@@ -1,0 +1,428 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum PigeonSex {
+  COCK
+  HEN
+}
+
+enum PigeonStatus {
+  ACTIVE
+  RETIRED
+  DECEASED
+}
+
+enum TournamentStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum RaceDayStatus {
+  PENDING
+  LIVE
+  COMPLETED
+}
+
+enum RaceWinnerCategory {
+  FIRST
+  LAST
+  AVERAGE
+  BRAVE
+}
+
+enum RegistrationPaymentStatus {
+  PENDING
+  PARTIAL
+  PAID
+}
+
+enum AccessLinkExpiryPreset {
+  TODAY
+  TOMORROW
+  DAYS_7
+  MONTH
+  CUSTOM
+}
+
+// ─── RBAC ────────────────────────────────────────────────────────────────────
+
+model Role {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique @db.VarChar(100)
+  slug        String   @unique @db.VarChar(50)
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  users       User[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(100)
+  slug        String   @unique @db.VarChar(100)
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String @map("role_id") @db.Uuid
+  permissionId String @map("permission_id") @db.Uuid
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// ─── Auth & Users ────────────────────────────────────────────────────────────
+
+model User {
+  id           String     @id @default(uuid()) @db.Uuid
+  email        String     @unique @db.VarChar(255)
+  passwordHash String     @map("password_hash") @db.VarChar(255)
+  firstName    String     @map("first_name") @db.VarChar(100)
+  lastName     String     @map("last_name") @db.VarChar(100)
+  roleId       String     @map("role_id") @db.Uuid
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt    DateTime?  @map("deleted_at") @db.Timestamptz
+
+  role            Role              @relation(fields: [roleId], references: [id])
+  refreshTokens   RefreshToken[]
+  pigeons         Pigeon[]
+  organizedEvents Tournament[]           @relation("TournamentOrganizer")
+  entries         TournamentEntry[]
+  accessLinks     TournamentAccessLink[]
+
+  @@index([email])
+  @@index([roleId])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  tokenHash String    @unique @map("token_hash") @db.VarChar(128)
+  userId    String    @map("user_id") @db.Uuid
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ─── Pigeons ─────────────────────────────────────────────────────────────────
+
+model Pigeon {
+  id         String       @id @default(uuid()) @db.Uuid
+  ringNumber String       @unique @map("ring_number") @db.VarChar(50)
+  name       String       @db.VarChar(100)
+  sex        PigeonSex
+  color      String       @db.VarChar(50)
+  birthYear  Int          @map("birth_year")
+  ownerId    String       @map("owner_id") @db.Uuid
+  status     PigeonStatus @default(ACTIVE)
+  notes      String?      @db.Text
+  createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt  DateTime?    @map("deleted_at") @db.Timestamptz
+
+  owner   User              @relation(fields: [ownerId], references: [id])
+  entries TournamentEntry[]
+
+  @@index([ownerId])
+  @@index([ringNumber])
+  @@map("pigeons")
+}
+
+// ─── Tournaments ─────────────────────────────────────────────────────────────
+
+model Tournament {
+  id                  String           @id @default(uuid()) @db.Uuid
+  title               String           @db.VarChar(200)
+  slug                String           @unique @db.VarChar(220)
+  description         String?          @db.Text
+  city                String           @db.VarChar(120)
+  entryFee            Decimal          @map("entry_fee") @db.Decimal(10, 2)
+  totalPigeonsAllowed Int              @map("total_pigeons_allowed")
+  doubleStampEnabled  Boolean          @default(false) @map("double_stamp_enabled")
+  startDate           DateTime         @map("start_date") @db.Date
+  endDate             DateTime         @map("end_date") @db.Date
+  startTime           String           @map("start_time") @db.VarChar(5)
+  endTime             String           @default("18:00") @map("end_time") @db.VarChar(5)
+  status              TournamentStatus @default(DRAFT)
+  bannerImage         String?          @map("banner_image") @db.VarChar(500)
+  createdById         String           @map("created_by") @db.Uuid
+  createdAt           DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt           DateTime?        @map("deleted_at") @db.Timestamptz
+
+  createdBy User                    @relation("TournamentOrganizer", fields: [createdById], references: [id])
+  entries   TournamentEntry[]
+  raceDays  RaceDay[]
+  participants Participant[]
+  registrations TournamentRegistration[]
+  registrationPigeons RegistrationPigeon[]
+  landingTimes PigeonLandingTime[]
+  accessLinks  TournamentAccessLink[]
+
+  @@index([status])
+  @@index([startDate])
+  @@index([createdById])
+  @@index([slug])
+  @@map("tournaments")
+}
+
+model TournamentEntry {
+  id            String    @id @default(uuid()) @db.Uuid
+  tournamentId  String    @map("tournament_id") @db.Uuid
+  pigeonId      String    @map("pigeon_id") @db.Uuid
+  participantId String    @map("participant_id") @db.Uuid
+  bibNumber     String    @map("bib_number") @db.VarChar(20)
+  arrivalTime   DateTime? @map("arrival_time") @db.Timestamptz
+  rank          Int?
+  speedMps      Decimal?  @map("speed_mps") @db.Decimal(10, 4)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  tournament  Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  pigeon      Pigeon     @relation(fields: [pigeonId], references: [id])
+  participant User       @relation(fields: [participantId], references: [id])
+
+  @@unique([tournamentId, pigeonId])
+  @@unique([tournamentId, bibNumber])
+  @@index([tournamentId])
+  @@index([participantId])
+  @@map("tournament_entries")
+}
+
+// ─── Race Days ───────────────────────────────────────────────────────────────
+
+model RaceDay {
+  id              String        @id @default(uuid()) @db.Uuid
+  tournamentId    String        @map("tournament_id") @db.Uuid
+  raceDate        DateTime      @map("race_date") @db.Date
+  releaseTime     String        @map("release_time") @db.VarChar(5)
+  endTime         String        @map("end_time") @db.VarChar(5)
+  releaseLocation String        @map("release_location") @db.VarChar(255)
+  weatherNotes    String?       @map("weather_notes") @db.Text
+  status          RaceDayStatus @default(PENDING)
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt       DateTime?     @map("deleted_at") @db.Timestamptz
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  landingTimes PigeonLandingTime[]
+  winners RaceDayWinner[]
+
+  @@unique([tournamentId, raceDate])
+  @@index([tournamentId])
+  @@index([status])
+  @@index([raceDate])
+  @@map("race_days")
+}
+
+// ─── Participants & Lofts ────────────────────────────────────────────────────
+
+model Participant {
+  id           String    @id @default(uuid()) @db.Uuid
+  tournamentId String    @map("tournament_id") @db.Uuid
+  name         String    @db.VarChar(150)
+  fatherName   String    @map("father_name") @db.VarChar(150)
+  phone        String    @db.VarChar(20)
+  city         String    @db.VarChar(120)
+  address      String?   @db.Text
+  loftName     String    @map("loft_name") @db.VarChar(150)
+  profileImage String?   @map("profile_image") @db.VarChar(500)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz
+
+  tournament          Tournament               @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  registrations       TournamentRegistration[]
+  registrationPigeons RegistrationPigeon[]
+  landingTimes        PigeonLandingTime[]
+  raceDayWinners      RaceDayWinner[]
+
+  @@unique([tournamentId, phone])
+  @@index([tournamentId])
+  @@index([name])
+  @@index([city])
+  @@index([loftName])
+  @@map("participants")
+}
+
+// ─── Tournament Registrations & Payments ─────────────────────────────────────
+
+model TournamentRegistration {
+  id                String                     @id @default(uuid()) @db.Uuid
+  tournamentId      String                     @map("tournament_id") @db.Uuid
+  participantId     String                     @map("participant_id") @db.Uuid
+  pigeonCount       Int                        @map("pigeon_count")
+  entryFeePerPigeon Decimal                    @map("entry_fee_per_pigeon") @db.Decimal(10, 2)
+  totalFee          Decimal                    @map("total_fee") @db.Decimal(10, 2)
+  paidAmount        Decimal                    @default(0) @map("paid_amount") @db.Decimal(10, 2)
+  paymentStatus     RegistrationPaymentStatus  @default(PENDING) @map("payment_status")
+  receiptNumber     String                     @unique @map("receipt_number") @db.VarChar(30)
+  createdAt         DateTime                   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime                   @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt         DateTime?                  @map("deleted_at") @db.Timestamptz
+
+  tournament  Tournament            @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  participant Participant           @relation(fields: [participantId], references: [id])
+  payments    RegistrationPayment[]
+  pigeons     RegistrationPigeon[]
+
+  @@unique([tournamentId, participantId])
+  @@index([tournamentId])
+  @@index([participantId])
+  @@index([paymentStatus])
+  @@index([receiptNumber])
+  @@map("tournament_registrations")
+}
+
+model RegistrationPayment {
+  id             String   @id @default(uuid()) @db.Uuid
+  registrationId String   @map("registration_id") @db.Uuid
+  amount         Decimal  @db.Decimal(10, 2)
+  notes          String?  @db.Text
+  paidAt         DateTime @default(now()) @map("paid_at") @db.Timestamptz
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  registration TournamentRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  @@index([registrationId])
+  @@map("registration_payments")
+}
+
+// ─── Registration Pigeons ────────────────────────────────────────────────────
+
+model RegistrationPigeon {
+  id             String       @id @default(uuid()) @db.Uuid
+  registrationId String       @map("registration_id") @db.Uuid
+  tournamentId   String       @map("tournament_id") @db.Uuid
+  participantId  String       @map("participant_id") @db.Uuid
+  ringNumber     String       @map("ring_number") @db.VarChar(50)
+  pigeonNumber   Int          @map("pigeon_number")
+  color          String       @db.VarChar(50)
+  gender         PigeonSex    @map("gender")
+  isDoubleStamp  Boolean      @default(false) @map("is_double_stamp")
+  status         PigeonStatus @default(ACTIVE)
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt      DateTime?    @map("deleted_at") @db.Timestamptz
+
+  registration TournamentRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  tournament   Tournament             @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  participant  Participant            @relation(fields: [participantId], references: [id])
+  landingTimes PigeonLandingTime[]
+  raceDayWinners RaceDayWinner[]
+
+  @@unique([registrationId, pigeonNumber])
+  @@unique([tournamentId, ringNumber])
+  @@index([registrationId])
+  @@index([tournamentId])
+  @@index([participantId])
+  @@index([status])
+  @@map("registration_pigeons")
+}
+
+// ─── Pigeon Landing Times ────────────────────────────────────────────────────
+
+model PigeonLandingTime {
+  id                   String    @id @default(uuid()) @db.Uuid
+  tournamentId         String    @map("tournament_id") @db.Uuid
+  raceDayId            String    @map("race_day_id") @db.Uuid
+  participantId        String    @map("participant_id") @db.Uuid
+  registrationPigeonId String    @map("registration_pigeon_id") @db.Uuid
+  landingTime          DateTime  @map("landing_time") @db.Timestamptz
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt            DateTime? @map("deleted_at") @db.Timestamptz
+
+  tournament         Tournament         @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  raceDay            RaceDay            @relation(fields: [raceDayId], references: [id], onDelete: Cascade)
+  participant        Participant        @relation(fields: [participantId], references: [id])
+  registrationPigeon RegistrationPigeon @relation(fields: [registrationPigeonId], references: [id])
+
+  @@unique([raceDayId, registrationPigeonId])
+  @@index([tournamentId])
+  @@index([raceDayId])
+  @@index([participantId])
+  @@index([landingTime])
+  @@map("pigeon_landing_times")
+}
+
+// ─── Tournament Organizer Access Links ───────────────────────────────────────
+
+model TournamentAccessLink {
+  id            String                 @id @default(uuid()) @db.Uuid
+  tournamentId  String                 @map("tournament_id") @db.Uuid
+  token         String                 @unique @db.VarChar(64)
+  secretKeyHash String                 @map("secret_key_hash") @db.VarChar(128)
+  expiryPreset  AccessLinkExpiryPreset @map("expiry_preset")
+  expiresAt     DateTime               @map("expires_at") @db.Timestamptz
+  revokedAt     DateTime?              @map("revoked_at") @db.Timestamptz
+  lastUsedAt    DateTime?              @map("last_used_at") @db.Timestamptz
+  createdById   String                 @map("created_by") @db.Uuid
+  createdAt     DateTime               @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime               @updatedAt @map("updated_at") @db.Timestamptz
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  createdBy  User       @relation(fields: [createdById], references: [id])
+
+  @@index([tournamentId])
+  @@index([expiresAt])
+  @@map("tournament_access_links")
+}
+
+model RaceDayWinner {
+  id                   String             @id @default(uuid()) @db.Uuid
+  raceDayId            String             @map("race_day_id") @db.Uuid
+  category             RaceWinnerCategory
+  participantId        String             @map("participant_id") @db.Uuid
+  registrationPigeonId String?            @map("registration_pigeon_id") @db.Uuid
+  valueMs              Int                @map("value_ms")
+  landingClockTime     String?            @map("landing_clock_time") @db.VarChar(16)
+  createdAt            DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  raceDay            RaceDay              @relation(fields: [raceDayId], references: [id], onDelete: Cascade)
+  participant        Participant          @relation(fields: [participantId], references: [id])
+  registrationPigeon RegistrationPigeon?  @relation(fields: [registrationPigeonId], references: [id], onDelete: SetNull)
+
+  @@unique([raceDayId, category])
+  @@index([raceDayId])
+  @@index([participantId])
+  @@map("race_day_winners")
+}

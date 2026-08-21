@@ -1,0 +1,26 @@
+@use '../../../styles/variables' as *;
+
+.pigeons-panel {
+  width: min(960px, calc(100vw - 2rem));
+}
+
+.pigeons-panel__toolbar {
+  margin-bottom: $spacing-md;
+}
+
+.toggle-chip {
+  border: 1px solid $color-border;
+  background: $color-bg;
+  color: $color-text-muted;
+  border-radius: $radius-full;
+  padding: 0.2rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &--active {
+    background: #fef3c7;
+    border-color: #f59e0b;
+    color: #b45309;
+  }
+}

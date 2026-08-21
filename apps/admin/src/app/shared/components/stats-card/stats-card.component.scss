@@ -1,0 +1,128 @@
+@use '../../../../styles/variables' as *;
+@use '../../../../styles/mixins' as *;
+
+:host {
+  display: block;
+}
+
+.stats-card {
+  @include card-surface;
+  padding: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  transition:
+    box-shadow $transition-base,
+    transform $transition-base;
+
+  &:hover {
+    box-shadow: $shadow-md;
+    transform: translateY(-2px);
+  }
+
+  &--loading {
+    pointer-events: none;
+  }
+}
+
+.stats-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $spacing-md;
+}
+
+.stats-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: $radius-sm;
+  flex-shrink: 0;
+
+  svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  &--primary {
+    background: $color-primary-soft;
+    color: $color-primary;
+  }
+
+  &--success {
+    background: $color-success-soft;
+    color: $color-success;
+  }
+
+  &--warning {
+    background: $color-warning-soft;
+    color: $color-warning;
+  }
+
+  &--info {
+    background: $color-info-soft;
+    color: $color-info;
+  }
+
+  &--accent {
+    background: $color-accent-soft;
+    color: $color-accent;
+  }
+}
+
+.stats-card__label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: $color-text-muted;
+  line-height: 1.4;
+}
+
+.stats-card__value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: $color-text;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.stats-card__subtitle {
+  font-size: 0.8125rem;
+  color: $color-text-subtle;
+}
+
+.stats-card__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.skeleton-line {
+  height: 12px;
+  border-radius: $radius-full;
+  background: linear-gradient(90deg, $color-border-light 25%, $color-border 50%, $color-border-light 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+
+  &--label {
+    width: 60%;
+    height: 14px;
+  }
+
+  &--value {
+    width: 45%;
+    height: 28px;
+    margin-top: $spacing-xs;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}

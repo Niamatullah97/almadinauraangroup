@@ -1,0 +1,124 @@
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
+
+:host {
+  display: block;
+  flex-shrink: 0;
+
+  @include respond-to(md) {
+    width: $sidebar-width;
+  }
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  z-index: 40;
+  backdrop-filter: blur(2px);
+
+  @include respond-to(md) {
+    display: none;
+  }
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  width: $sidebar-width;
+  height: 100vh;
+  background: $color-surface;
+  border-right: 1px solid $color-border;
+  box-shadow: $shadow-lg;
+  display: flex;
+  flex-direction: column;
+  padding: $spacing-lg;
+  transform: translateX(-100%);
+  transition: transform $transition-base;
+
+  @include respond-to(md) {
+    position: sticky;
+    transform: none;
+    box-shadow: none;
+    flex-shrink: 0;
+  }
+
+  &--open {
+    transform: translateX(0);
+  }
+}
+
+.sidebar__brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: $spacing-lg;
+  margin-bottom: $spacing-md;
+  border-bottom: 1px solid $color-border-light;
+}
+
+.sidebar__logo {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  flex: 1;
+}
+
+.sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: 0.75rem $spacing-md;
+  border-radius: $radius-sm;
+  color: $color-text-muted;
+  text-decoration: none;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  transition:
+    background $transition-fast,
+    color $transition-fast;
+
+  @include focus-ring;
+
+  &:hover {
+    background: $color-bg;
+    color: $color-text;
+  }
+
+  &--active {
+    background: $color-primary-soft;
+    color: $color-primary;
+  }
+}
+
+.sidebar__link-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.sidebar__footer {
+  padding-top: $spacing-lg;
+  border-top: 1px solid $color-border-light;
+}
+
+.sidebar__version {
+  font-size: 0.75rem;
+  color: $color-text-subtle;
+  line-height: 1.5;
+}

@@ -1,0 +1,35 @@
+@use '../../../styles/variables' as *;
+
+.modal--wide {
+  width: min(94vw, 760px);
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.profile-upload {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.profile-preview,
+.profile-placeholder {
+  width: 88px;
+  height: 88px;
+  border-radius: $radius-full;
+}
+
+.profile-preview {
+  object-fit: cover;
+  border: 3px solid $color-border-light;
+}
+
+.profile-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $color-primary-soft;
+  color: $color-primary;
+  font-size: 1.5rem;
+  font-weight: 700;
+}

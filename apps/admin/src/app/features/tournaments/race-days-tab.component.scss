@@ -1,0 +1,36 @@
+.race-days-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.race-days-tab__title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.race-days-tab__subtitle {
+  margin-top: 0.25rem;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.race-days-tab__hint {
+  margin-top: -0.25rem;
+}
+
+.status-badge--race-pending {
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.status-badge--race-live {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.status-badge--race-completed {
+  background: #f0fdf4;
+  color: #16a34a;
+}

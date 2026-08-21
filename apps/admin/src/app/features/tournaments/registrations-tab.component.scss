@@ -1,0 +1,48 @@
+@use '../../../styles/variables' as *;
+
+.registrations-tab__title {
+  margin: 0 0 $spacing-xs;
+  font-size: 1.125rem;
+}
+
+.participant-cell {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.participant-cell__avatar,
+.participant-cell__avatar--placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: $radius-full;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.participant-cell__avatar--placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: $color-primary-soft;
+  color: $color-primary;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.participant-cell__name {
+  font-weight: 600;
+  color: $color-text;
+}
+
+.registrations-tab__subtitle,
+.registrations-tab__hint {
+  margin: 0;
+}
+
+.data-table td {
+  vertical-align: middle;
+}

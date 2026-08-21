@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.next/
+.open-next/
+.wrangler/
+out/
+.angular/
+coverage/
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+!.env.*.example
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Turbo
+.turbo/
+
+# Testing
+.nyc_output/
+
+# Docker volumes (local)
+docker/data/
+
+# Uploaded assets (local dev)
+uploads/
+apps/api/uploads/
+
+# Generated deployment configuration
+apps/admin/src/environments/environment.cloudflare.generated.ts
+.dev.vars*
+!.dev.vars.example

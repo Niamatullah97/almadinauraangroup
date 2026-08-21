@@ -1,0 +1,222 @@
+<section class="reports">
+  <header class="reports-hero">
+    <div class="reports-hero__content">
+      <span class="reports-hero__eyebrow">Data & exports</span>
+      <h2 class="reports__title">Reports</h2>
+      <p class="reports__subtitle">
+        Generate polished tournament, race day, or participant reports and download operational
+        data.
+      </p>
+    </div>
+    <div class="reports-hero__icon" aria-hidden="true">↗</div>
+  </header>
+
+  <div class="result-export-card">
+    <div class="result-export-card__heading">
+      <div>
+        <span class="section-kicker">Results report</span>
+        <h3>Choose what you want to export</h3>
+        <p>Select a tournament, then choose the report level.</p>
+      </div>
+      <span class="file-badge">PDF</span>
+    </div>
+
+    <div class="scope-switcher" aria-label="Result report type">
+      <button
+        type="button"
+        [class.scope-option--active]="resultScope() === resultScopes.COMPLETE"
+        (click)="onScopeChange(resultScopes.COMPLETE)"
+      >
+        <strong>Complete tournament</strong>
+        <span>All race days and overall totals</span>
+      </button>
+      <button
+        type="button"
+        [class.scope-option--active]="resultScope() === resultScopes.DAILY"
+        (click)="onScopeChange(resultScopes.DAILY)"
+      >
+        <strong>Specific race day</strong>
+        <span>Results for one selected race day</span>
+      </button>
+      <button
+        type="button"
+        [class.scope-option--active]="resultScope() === resultScopes.PARTICIPANT"
+        (click)="onScopeChange(resultScopes.PARTICIPANT)"
+      >
+        <strong>Specific participant</strong>
+        <span>One participant across the tournament</span>
+      </button>
+    </div>
+
+    <div class="filters-grid">
+      <div class="form-field">
+        <label class="form-label" for="tournament">Tournament</label>
+        <select
+          id="tournament"
+          class="form-control"
+          [ngModel]="selectedTournamentId()"
+          (ngModelChange)="onTournamentChange($event)"
+        >
+          <option value="">Select tournament</option>
+          @for (tournament of tournaments(); track tournament.id) {
+            <option [value]="tournament.id">{{ tournament.title }} · {{ tournament.city }}</option>
+          }
+        </select>
+      </div>
+
+      @if (resultScope() === resultScopes.DAILY) {
+        <div class="form-field">
+          <label class="form-label" for="raceDay">Race day</label>
+          <select
+            id="raceDay"
+            class="form-control"
+            [disabled]="!selectedTournamentId()"
+            [ngModel]="selectedRaceDayId()"
+            (ngModelChange)="onRaceDayChange($event)"
+          >
+            <option value="">Select race day</option>
+            @for (raceDay of raceDays(); track raceDay.id) {
+              <option [value]="raceDay.id">
+                {{ raceDay.raceDate }} · {{ raceDay.releaseTime }} – {{ raceDay.endTime }}
+              </option>
+            }
+          </select>
+        </div>
+      }
+
+      @if (resultScope() === resultScopes.PARTICIPANT) {
+        <div class="form-field">
+          <label class="form-label" for="participant">Participant / Loft</label>
+          <select
+            id="participant"
+            class="form-control"
+            [disabled]="!selectedTournamentId()"
+            [ngModel]="selectedParticipantId()"
+            (ngModelChange)="onParticipantChange($event)"
+          >
+            <option value="">Select participant</option>
+            @for (registration of registrations(); track registration.id) {
+              <option [value]="registration.participantId">
+                {{ registration.participant?.name }} · {{ registration.participant?.loftName }}
+              </option>
+            }
+          </select>
+        </div>
+      }
+    </div>
+
+    @if (errorMessage()) {
+      <p class="reports__error" role="alert">{{ errorMessage() }}</p>
+    }
+
+    <div class="result-export-card__footer">
+      <p>
+        @if (resultScope() === resultScopes.COMPLETE) {
+          Includes daily results, overall totals, winners, and double stamp totals.
+        } @else if (resultScope() === resultScopes.DAILY) {
+          Includes landing times, winners, and summary for the selected day.
+        } @else {
+          Includes the participant's performance on every race day and overall total.
+        }
+      </p>
+      <button
+        type="button"
+        class="btn btn-primary export-button"
+        [disabled]="!canDownloadTournamentResult() || isDownloading(reportTypes.TOURNAMENT_RESULT)"
+        (click)="downloadReport(reportTypes.TOURNAMENT_RESULT)"
+      >
+        {{
+          isDownloading(reportTypes.TOURNAMENT_RESULT)
+            ? 'Generating report...'
+            : 'Download result PDF'
+        }}
+      </button>
+    </div>
+  </div>
+
+  <div class="additional-heading">
+    <div>
+      <span class="section-kicker">Additional exports</span>
+      <h3>Operational reports</h3>
+    </div>
+    <p>These exports use the tournament selected above.</p>
+  </div>
+
+  <div class="reports-grid">
+    <article class="report-card">
+      <div class="report-card__icon report-card__icon--blue" aria-hidden="true">👥</div>
+      <div class="report-card__content">
+        <h3>Participant list Excel</h3>
+        <p>Registered participants with loft details, pigeon counts, and payment status.</p>
+      </div>
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="!selectedTournamentId() || isDownloading(reportTypes.PARTICIPANT_LIST)"
+        (click)="downloadReport(reportTypes.PARTICIPANT_LIST)"
+      >
+        {{ isDownloading(reportTypes.PARTICIPANT_LIST) ? 'Generating...' : 'Download Excel' }}
+      </button>
+    </article>
+
+    <article class="report-card">
+      <div class="report-card__icon report-card__icon--green" aria-hidden="true">₨</div>
+      <div class="report-card__content">
+        <h3>Payment report Excel</h3>
+        <p>Receipt-level payment summary with totals, balances, and last payment dates.</p>
+      </div>
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="!selectedTournamentId() || isDownloading(reportTypes.PAYMENTS)"
+        (click)="downloadReport(reportTypes.PAYMENTS)"
+      >
+        {{ isDownloading(reportTypes.PAYMENTS) ? 'Generating...' : 'Download Excel' }}
+      </button>
+    </article>
+
+    <article class="report-card">
+      <div class="report-card__icon report-card__icon--amber" aria-hidden="true">★</div>
+      <div class="report-card__content">
+        <h3>Prize report PDF</h3>
+        <p>Top-ranked prize distribution based on collected registration payments.</p>
+      </div>
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="!selectedTournamentId() || isDownloading(reportTypes.PRIZES)"
+        (click)="downloadReport(reportTypes.PRIZES)"
+      >
+        {{ isDownloading(reportTypes.PRIZES) ? 'Generating...' : 'Download PDF' }}
+      </button>
+    </article>
+
+    <article class="report-card">
+      <div class="report-card__icon report-card__icon--purple" aria-hidden="true">◷</div>
+      <div class="report-card__content">
+        <h3>Landing time report Excel</h3>
+        <p>Pigeon landing times from a selected race day entry sheet.</p>
+      </div>
+      <select
+        class="form-control"
+        aria-label="Landing time report race day"
+        [disabled]="!selectedTournamentId()"
+        [ngModel]="selectedRaceDayId()"
+        (ngModelChange)="onRaceDayChange($event)"
+      >
+        <option value="">Select race day</option>
+        @for (raceDay of raceDays(); track raceDay.id) {
+          <option [value]="raceDay.id">{{ raceDay.raceDate }} · {{ raceDay.releaseTime }}</option>
+        }
+      </select>
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="!canDownloadLandingTimes() || isDownloading(reportTypes.LANDING_TIMES)"
+        (click)="downloadReport(reportTypes.LANDING_TIMES)"
+      >
+        {{ isDownloading(reportTypes.LANDING_TIMES) ? 'Generating...' : 'Download Excel' }}
+      </button>
+    </article>
+  </div>
+</section>

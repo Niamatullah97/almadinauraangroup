@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: kabootar
+          POSTGRES_PASSWORD: kabootar_secret
+          POSTGRES_DB: kabootar_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U kabootar"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://kabootar:kabootar_secret@localhost:5432/kabootar_test?schema=public
+      DIRECT_URL: postgresql://kabootar:kabootar_secret@localhost:5432/kabootar_test?schema=public
+      JWT_SECRET: ci-jwt-secret-with-at-least-32-characters-long
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.6.5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test:ci
+
+      - name: API E2E tests
+        run: pnpm --filter @kabootar/api test:e2e
+
+      - name: Build
+        run: pnpm build
+
+      - name: Build Cloudflare deployment targets
+        env:
+          NEXT_PUBLIC_API_URL: https://api.example.com/api/v1
+          NEXT_PUBLIC_SITE_URL: https://example.com
+          NEXT_PUBLIC_UPLOADS_URL: https://example.supabase.co/storage/v1/object/public/kabootar
+          API_URL: https://api.example.com/api/v1
+          UPLOADS_URL: https://example.supabase.co/storage/v1/object/public/kabootar
+        run: |
+          pnpm build:web:cloudflare
+          pnpm build:admin:cloudflare

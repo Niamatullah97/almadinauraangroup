@@ -1,0 +1,26 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "dev: all",
+      "type": "shell",
+      "command": "pnpm dev",
+      "group": { "kind": "build", "isDefault": true }
+    },
+    {
+      "label": "dev: api",
+      "type": "shell",
+      "command": "pnpm --filter @kabootar/api dev"
+    },
+    {
+      "label": "dev: admin",
+      "type": "shell",
+      "command": "pnpm --filter @kabootar/admin dev"
+    },
+    {
+      "label": "dev: web",
+      "type": "shell",
+      "command": "pnpm --filter @kabootar/web dev"
+    }
+  ]
+}
