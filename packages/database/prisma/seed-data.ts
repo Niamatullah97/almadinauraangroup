@@ -152,5 +152,5 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   ],
 };
 
-export const SUPER_ADMIN_EMAIL = 'superadmin@kabootar.local';
-export const SUPER_ADMIN_PASSWORD = 'SuperAdmin@123';
+export const SUPER_ADMIN_EMAIL = 'admin@almadinauraangroup.com';
+export const SUPER_ADMIN_PASSWORD = 'Pakistan_almadinauraangroup';
