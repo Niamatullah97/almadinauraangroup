@@ -6,7 +6,8 @@
   "scripts": {
     "build": "turbo run build",
     "build:api:hostinger": "pnpm db:generate && turbo run build --filter=@kabootar/api...",
-    "deploy:api:hostinger": "pnpm build:api:hostinger && pnpm db:migrate:deploy",
+    "deploy:api:hostinger": "pnpm build:api:hostinger",
+    "bundle:api:hostinger": "pnpm build:api:hostinger && rimraf deploy/hostinger-api && pnpm --filter @kabootar/api --prod deploy deploy/hostinger-api --legacy",
     "build:web:cloudflare": "pnpm --filter @kabootar/shared build && pnpm --filter @kabootar/web build:cf",
     "deploy:web:cloudflare": "pnpm --filter @kabootar/shared build && pnpm --filter @kabootar/web deploy:cf",
     "build:admin:cloudflare": "pnpm --filter @kabootar/shared build && pnpm --filter @kabootar/admin build:cf",
@@ -33,6 +34,7 @@
   },
   "devDependencies": {
     "@kabootar/eslint-config": "workspace:*",
+    "eslint": "^9.22.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.4.3",
     "prettier": "^3.5.3",
@@ -48,11 +50,11 @@
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
-      "eslint --fix",
-      "prettier --write"
+      "pnpm exec eslint --fix",
+      "pnpm exec prettier --write"
     ],
     "*.{json,md,yml,yaml,html,css,scss}": [
-      "prettier --write"
+      "pnpm exec prettier --write"
     ]
   }
 }
