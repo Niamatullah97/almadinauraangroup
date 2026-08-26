@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "kabootar-web",
+  "name": "almadinauraangroup",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-08-21",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
@@ -11,7 +11,7 @@
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "kabootar-web",
+      "service": "almadinauraangroup",
     },
   ],
   "observability": {
