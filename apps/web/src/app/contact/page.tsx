@@ -5,7 +5,8 @@ import { buildPageMetadata } from '@/lib/seo';
 
 export const metadata = buildPageMetadata({
   title: 'Contact',
-  description: 'Get in touch with the AlMadina Uraan Group team for tournament inquiries and support.',
+  description:
+    'Get in touch with the AlMadina Uraan Group team for tournament inquiries and support.',
   path: '/contact',
 });
 
@@ -15,8 +16,8 @@ export default function ContactPage() {
       <div className="page-hero">
         <h1>Contact us</h1>
         <p>
-          Have questions about a tournament, registration, or results? Reach out and we&apos;ll
-          get back to you as soon as possible.
+          Have questions about a tournament, registration, or results? Reach out and we&apos;ll get
+          back to you as soon as possible.
         </p>
       </div>
 

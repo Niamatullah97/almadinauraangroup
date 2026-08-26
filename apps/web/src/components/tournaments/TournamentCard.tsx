@@ -1,8 +1,8 @@
-import Link from 'next/link';
 import { TournamentStatus } from '@kabootar/shared';
+import Link from 'next/link';
 
-import { formatCurrency, formatDate, formatStatus } from '@/lib/format';
 import { resolveBannerUrl } from '@/lib/config';
+import { formatCurrency, formatDate, formatStatus } from '@/lib/format';
 
 interface TournamentCardProps {
   tournament: {
@@ -32,7 +32,13 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
         <img
           src={bannerUrl}
           alt=""
-          style={{ width: '100%', height: 140, objectFit: 'cover', borderRadius: 8, marginBottom: 12 }}
+          style={{
+            width: '100%',
+            height: 140,
+            objectFit: 'cover',
+            borderRadius: 8,
+            marginBottom: 12,
+          }}
         />
       )}
       <h2 style={{ fontSize: '1.125rem', marginBottom: 8 }}>{tournament.title}</h2>

@@ -1,22 +1,18 @@
-import {
-  ConflictException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { AuthTokens, JwtPayload, UserRole } from '@kabootar/shared';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { UserStatus } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
-import { AuthTokens, JwtPayload, UserRole } from '@kabootar/shared';
+import * as bcrypt from 'bcryptjs';
 
 import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
-import { LoginDto } from '../presentation/dto/login.dto';
-import { RegisterDto } from '../presentation/dto/register.dto';
 import {
   generateRefreshToken,
   getRefreshTokenExpiry,
   hashToken,
 } from '../infrastructure/token.util';
+import { LoginDto } from '../presentation/dto/login.dto';
+import { RegisterDto } from '../presentation/dto/register.dto';
 
 const USER_WITH_ROLE_SELECT = {
   id: true,

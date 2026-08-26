@@ -17,10 +17,7 @@ export function TournamentNav({
 
   return (
     <nav className="tabs" aria-label="Tournament sections">
-      <Link
-        href={base}
-        className={active === 'overview' ? 'tab tab--active' : 'tab'}
-      >
+      <Link href={base} className={active === 'overview' ? 'tab tab--active' : 'tab'}>
         Overview
       </Link>
       <Link

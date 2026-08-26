@@ -1,18 +1,13 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { ResultSummary, TournamentBanner } from '@/components/ui/ResultCards';
 import { TournamentNav } from '@/components/tournaments/TournamentNav';
+import { ResultSummary, TournamentBanner } from '@/components/ui/ResultCards';
 import { getRaceDays } from '@/lib/api/race-days';
 import { getTotalResults } from '@/lib/api/results';
 import { getTournament } from '@/lib/api/tournaments';
 import { resolveBannerUrl } from '@/lib/config';
-import {
-  countParticipantLofts,
-  formatCurrency,
-  formatDate,
-  formatStatus,
-} from '@/lib/format';
+import { countParticipantLofts, formatCurrency, formatDate, formatStatus } from '@/lib/format';
 import { buildPageMetadata } from '@/lib/seo';
 
 interface Props {
@@ -67,8 +62,12 @@ export default async function TournamentDetailPage({ params }: Props) {
 
       <div className="meta-row" style={{ marginBottom: '1.5rem' }}>
         <span>{tournament.city}</span>
-        <span>{formatDate(tournament.startDate)} – {formatDate(tournament.endDate)}</span>
-        <span>{tournament.startTime} – {tournament.endTime}</span>
+        <span>
+          {formatDate(tournament.startDate)} – {formatDate(tournament.endDate)}
+        </span>
+        <span>
+          {tournament.startTime} – {tournament.endTime}
+        </span>
         <span>{formatCurrency(tournament.entryFee)} entry</span>
         <span>{tournament.totalPigeonsAllowed} pigeon slots</span>
         <span className="badge">{formatStatus(tournament.status)}</span>
@@ -85,16 +84,12 @@ export default async function TournamentDetailPage({ params }: Props) {
       <div className="grid">
         <Link href={`/tournaments/${id}/results/total`} className="card link-card">
           <h3>Total results</h3>
-          <p style={{ color: 'var(--color-muted)' }}>
-            Overall rankings across all race days.
-          </p>
+          <p style={{ color: 'var(--color-muted)' }}>Overall rankings across all race days.</p>
         </Link>
         {tournament.doubleStampEnabled && (
           <Link href={`/tournaments/${id}/results/double-stamp`} className="card link-card">
             <h3>Double stamp results</h3>
-            <p style={{ color: 'var(--color-muted)' }}>
-              Rankings for double-stamp pigeons only.
-            </p>
+            <p style={{ color: 'var(--color-muted)' }}>Rankings for double-stamp pigeons only.</p>
           </Link>
         )}
         {raceDays.length > 0 && (

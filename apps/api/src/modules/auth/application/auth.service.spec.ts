@@ -1,13 +1,12 @@
 import { Permission, UserRole } from '@kabootar/shared';
-import { UserStatus } from '@prisma/client';
-import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
-import { compare, hash } from 'bcrypt';
+import { Test, TestingModule } from '@nestjs/testing';
+import { UserStatus } from '@prisma/client';
+
+import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
 
 import { AuthService } from './auth.service';
-import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
 
 const mockUser = {
   id: 'user-1',
@@ -78,18 +77,18 @@ describe('AuthService', () => {
     it('throws UnauthorizedException when user not found', async () => {
       prisma.user.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.login({ email: 'test@test.com', password: 'password' }),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.login({ email: 'test@test.com', password: 'password' })).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('throws UnauthorizedException when password is invalid', async () => {
       prisma.user.findUnique.mockResolvedValue(mockUser);
       (compare as jest.Mock).mockResolvedValue(false);
 
-      await expect(
-        service.login({ email: 'test@test.com', password: 'wrong' }),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.login({ email: 'test@test.com', password: 'wrong' })).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('throws UnauthorizedException when user is suspended', async () => {
@@ -98,9 +97,9 @@ describe('AuthService', () => {
         status: UserStatus.SUSPENDED,
       });
 
-      await expect(
-        service.login({ email: 'test@test.com', password: 'password' }),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.login({ email: 'test@test.com', password: 'password' })).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('returns user and tokens on successful login', async () => {

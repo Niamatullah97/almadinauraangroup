@@ -1,5 +1,5 @@
 export const environment = {
   production: true,
-  apiUrl: '/api/v1',
-  uploadsUrl: '',
+  apiUrl: 'https://api.almadinauraangroup.com/api/v1',
+  uploadsUrl: 'https://abeewdprilovdbaynbdh.supabase.co/storage/v1/object/public/kabootar',
 };

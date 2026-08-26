@@ -1,5 +1,8 @@
+import { UserRole } from '@kabootar/shared';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
+import { Pool } from 'pg';
 
 import {
   PERMISSIONS,
@@ -8,9 +11,9 @@ import {
   SUPER_ADMIN_EMAIL,
   SUPER_ADMIN_PASSWORD,
 } from './seed-data';
-import { UserRole } from '@kabootar/shared';
 
-const prisma = new PrismaClient();
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 async function seedRolesAndPermissions() {
   for (const role of ROLES) {
@@ -95,4 +98,5 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
   });

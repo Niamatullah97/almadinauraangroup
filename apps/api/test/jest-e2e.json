@@ -8,6 +8,6 @@
     "^.+\\.(t|j)s$": "ts-jest"
   },
   "moduleNameMapper": {
-    "^bcrypt$": "<rootDir>/mocks/bcrypt.mock.ts"
+    "^bcryptjs$": "<rootDir>/mocks/bcrypt.mock.ts"
   }
 }

@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import ws from 'ws';
 
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const EXTENSION_BY_MIME_TYPE: Record<string, string> = {
@@ -40,6 +41,8 @@ export class StorageService {
       this.driver === 'supabase' && supabaseUrl && serviceRoleKey
         ? createClient(supabaseUrl, serviceRoleKey, {
             auth: { autoRefreshToken: false, persistSession: false },
+            // Hostinger Node 20 has no global WebSocket; supabase-js requires one at init.
+            realtime: { transport: ws as unknown as typeof WebSocket },
           })
         : null;
   }

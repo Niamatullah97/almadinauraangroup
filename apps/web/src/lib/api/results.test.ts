@@ -1,10 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  getDailyResults,
-  getTotalDoubleStampResults,
-  getTotalResults,
-} from '@/lib/api/results';
+import { getDailyResults, getTotalDoubleStampResults, getTotalResults } from '@/lib/api/results';
 
 describe('results API', () => {
   afterEach(() => {
@@ -57,10 +53,7 @@ describe('results API', () => {
   });
 
   it('returns null when daily results request fails', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockRejectedValue(new Error('network error')),
-    );
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network error')));
 
     const results = await getDailyResults('t1', 'rd1');
     expect(results).toBeNull();

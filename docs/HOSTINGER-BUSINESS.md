@@ -74,7 +74,7 @@ Copy all variables from `.env.hostinger.example` into hPanel and replace the pla
 `CORS_ORIGINS` must contain exact frontend origins:
 
 ```text
-https://yourdomain.com,https://www.yourdomain.com,https://admin.yourdomain.com
+https://almadinauraangroup.com,https://www.almadinauraangroup.com,https://admin.almadinauraangroup.com
 ```
 
 The build command generates Prisma Client, builds the API and workspace dependencies, then runs
@@ -83,7 +83,7 @@ pending migrations through `DIRECT_URL`.
 Verify:
 
 ```bash
-curl https://api.yourdomain.com/api/v1/health
+curl https://api.almadinauraangroup.com/api/v1/health
 ```
 
 ## 4. Cloudflare Workers — Public Next.js App
@@ -100,9 +100,9 @@ pnpm --filter @kabootar/web exec wrangler r2 bucket create kabootar-web-opennext
 Set these build-time variables in Cloudflare:
 
 ```text
-NEXT_PUBLIC_API_URL=https://api.yourdomain.com/api/v1
-NEXT_PUBLIC_SITE_URL=https://yourdomain.com
-NEXT_PUBLIC_UPLOADS_URL=https://PROJECT_REF.supabase.co/storage/v1/object/public/kabootar
+NEXT_PUBLIC_API_URL=https://api.almadinauraangroup.com/api/v1
+NEXT_PUBLIC_SITE_URL=https://almadinauraangroup.com
+NEXT_PUBLIC_UPLOADS_URL=https://abeewdprilovdbaynbdh.supabase.co/storage/v1/object/public/kabootar
 NEXT_PUBLIC_WHATSAPP_NUMBER=...
 NEXT_PUBLIC_CONTACT_EMAIL=...
 NEXT_PUBLIC_CONTACT_PHONE=...
@@ -115,7 +115,7 @@ pnpm build:web:cloudflare
 pnpm deploy:web:cloudflare
 ```
 
-Attach `yourdomain.com` and optionally `www.yourdomain.com` as Worker custom domains.
+Attach `almadinauraangroup.com` and optionally `www.almadinauraangroup.com` as Worker custom domains.
 
 ## 5. Cloudflare Pages — Angular Admin
 
@@ -129,12 +129,12 @@ Create a Pages project connected to the same repository:
 Add build variables:
 
 ```text
-API_URL=https://api.yourdomain.com/api/v1
-UPLOADS_URL=https://PROJECT_REF.supabase.co/storage/v1/object/public/kabootar
+API_URL=https://api.almadinauraangroup.com/api/v1
+UPLOADS_URL=https://abeewdprilovdbaynbdh.supabase.co/storage/v1/object/public/kabootar
 ```
 
 The build generates Angular's production environment file. `_redirects` provides SPA route fallback.
-Attach `admin.yourdomain.com` after the Pages deployment is healthy.
+Attach `admin.almadinauraangroup.com` after the Pages deployment is healthy.
 
 ## 6. Release Order and Smoke Test
 
