@@ -88,14 +88,8 @@ curl https://api.almadinauraangroup.com/api/v1/health
 
 ## 4. Cloudflare Workers — Public Next.js App
 
-The project uses OpenNext because the public site has SSR and 60-second revalidation.
-
-First create the free R2 cache bucket:
-
-```bash
-pnpm --filter @kabootar/web exec wrangler login
-pnpm --filter @kabootar/web exec wrangler r2 bucket create kabootar-web-opennext-cache
-```
+The project uses OpenNext on Cloudflare Workers. Incremental cache uses Workers
+Static Assets (no R2 bucket / no paid storage required).
 
 Set these build-time variables in Cloudflare:
 
