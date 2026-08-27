@@ -9,8 +9,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import ws from 'ws';
+import { StorageClient } from '@supabase/storage-js';
 
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const EXTENSION_BY_MIME_TYPE: Record<string, string> = {
@@ -28,22 +27,20 @@ export class StorageService {
   private readonly participantsDir = join(process.cwd(), 'uploads', 'participants');
   private readonly driver: 'local' | 'supabase';
   private readonly bucket: string;
-  private readonly supabase: SupabaseClient | null;
+  private readonly supabaseUrl: string | null;
+  private readonly storageClient: StorageClient | null;
 
   constructor(private readonly config: ConfigService) {
     this.driver =
       config.get<string>('STORAGE_DRIVER', 'local') === 'supabase' ? 'supabase' : 'local';
     this.bucket = config.get<string>('SUPABASE_STORAGE_BUCKET', DEFAULT_BUCKET);
 
-    const supabaseUrl = config.get<string>('SUPABASE_URL');
+    const supabaseUrl = config.get<string>('SUPABASE_URL') ?? null;
     const serviceRoleKey = config.get<string>('SUPABASE_SERVICE_ROLE_KEY');
-    this.supabase =
+    this.supabaseUrl = supabaseUrl;
+    this.storageClient =
       this.driver === 'supabase' && supabaseUrl && serviceRoleKey
-        ? createClient(supabaseUrl, serviceRoleKey, {
-            auth: { autoRefreshToken: false, persistSession: false },
-            // Hostinger Node 20 has no global WebSocket; supabase-js requires one at init.
-            realtime: { transport: ws as unknown as typeof WebSocket },
-          })
+        ? createSupabaseStorageClient(supabaseUrl, serviceRoleKey)
         : null;
   }
 
@@ -98,12 +95,12 @@ export class StorageService {
       return;
     }
 
-    if (!this.supabase) return;
+    if (!this.storageClient) return;
 
     const storagePath = this.getSupabaseStoragePath(url);
     if (!storagePath) return;
 
-    const { error } = await this.supabase.storage.from(this.bucket).remove([storagePath]);
+    const { error } = await this.storageClient.from(this.bucket).remove([storagePath]);
     if (error) {
       this.logger.warn(`Could not delete storage object "${storagePath}": ${error.message}`);
     }
@@ -123,14 +120,14 @@ export class StorageService {
 
     try {
       if (this.driver === 'supabase') {
-        if (!this.supabase) {
+        if (!this.storageClient || !this.supabaseUrl) {
           throw new InternalServerErrorException(
             'Object storage is not configured. Set STORAGE_DRIVER=supabase with SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY on the API.',
           );
         }
 
         const storagePath = `${folder}/${filename}`;
-        const { error } = await this.supabase.storage
+        const { error } = await this.storageClient
           .from(this.bucket)
           .upload(storagePath, file.buffer, {
             contentType: file.mimetype,
@@ -146,7 +143,7 @@ export class StorageService {
           );
         }
 
-        return this.supabase.storage.from(this.bucket).getPublicUrl(storagePath).data.publicUrl;
+        return `${this.supabaseUrl.replace(/\/$/, '')}/storage/v1/object/public/${this.bucket}/${storagePath}`;
       }
 
       await mkdir(directory, { recursive: true });
@@ -179,4 +176,14 @@ export class StorageService {
       return null;
     }
   }
+}
+
+function createSupabaseStorageClient(supabaseUrl: string, apiKey: string): StorageClient {
+  const headers: Record<string, string> = { apikey: apiKey };
+  // New opaque sb_secret_* keys are not JWTs; Bearer auth rejects them with "Invalid JWT".
+  if (!apiKey.startsWith('sb_secret_') && !apiKey.startsWith('sb_publishable_')) {
+    headers.Authorization = `Bearer ${apiKey}`;
+  }
+
+  return new StorageClient(`${supabaseUrl.replace(/\/$/, '')}/storage/v1`, headers);
 }
