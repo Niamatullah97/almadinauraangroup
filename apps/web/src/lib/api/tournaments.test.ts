@@ -29,7 +29,7 @@ describe('tournaments API', () => {
     expect(tournaments).toEqual([{ id: 't1', title: 'Spring Cup' }]);
     expect(fetch).toHaveBeenCalledWith(
       'http://localhost:3000/api/v1/tournaments?limit=100',
-      expect.objectContaining({ next: { revalidate: 60 } }),
+      expect.objectContaining({ cache: 'no-store' }),
     );
   });
 

@@ -6,7 +6,7 @@ export async function fetchApi<T>(path: string, init?: RequestInit): Promise<T |
   try {
     const res = await fetch(`${API_URL}${path}`, {
       ...init,
-      next: { revalidate: 60 },
+      cache: 'no-store',
     });
 
     if (!res.ok) return null;

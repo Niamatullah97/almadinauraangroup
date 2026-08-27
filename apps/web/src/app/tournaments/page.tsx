@@ -1,6 +1,9 @@
 import { TournamentCard } from '@/components/tournaments/TournamentCard';
 import { getTournaments } from '@/lib/api/tournaments';
+import { dynamic } from '@/lib/runtime';
 import { buildPageMetadata } from '@/lib/seo';
+
+export { dynamic };
 
 export const metadata = buildPageMetadata({
   title: 'Tournaments',

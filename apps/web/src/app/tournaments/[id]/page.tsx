@@ -8,7 +8,10 @@ import { getTotalResults } from '@/lib/api/results';
 import { getTournament } from '@/lib/api/tournaments';
 import { resolveBannerUrl } from '@/lib/config';
 import { countParticipantLofts, formatCurrency, formatDate, formatStatus } from '@/lib/format';
+import { dynamic } from '@/lib/runtime';
 import { buildPageMetadata } from '@/lib/seo';
+
+export { dynamic };
 
 interface Props {
   params: Promise<{ id: string }>;
