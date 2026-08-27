@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, Tournament, TournamentStatus } from '@prisma/client';
 
 import { slugify } from '../../../common/utils/slug.util';
@@ -17,14 +13,7 @@ type TournamentWithCreator = Tournament & {
   _count?: { registrations: number };
 };
 
-const SORTABLE_FIELDS = new Set([
-  'title',
-  'city',
-  'startDate',
-  'endDate',
-  'status',
-  'createdAt',
-]);
+const SORTABLE_FIELDS = new Set(['title', 'city', 'startDate', 'endDate', 'status', 'createdAt']);
 
 @Injectable()
 export class TournamentsService {
@@ -208,10 +197,10 @@ export class TournamentsService {
     let counter = 1;
 
     while (true) {
+      // Include soft-deleted rows — DB unique index is on `slug` alone.
       const existing = await this.prisma.tournament.findFirst({
         where: {
           slug,
-          deletedAt: null,
           ...(excludeId && { NOT: { id: excludeId } }),
         },
       });
