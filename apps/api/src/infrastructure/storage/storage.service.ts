@@ -121,31 +121,52 @@ export class StorageService {
     const extension = EXTENSION_BY_MIME_TYPE[file.mimetype] ?? '.jpg';
     const filename = `${randomUUID()}${extension}`;
 
-    if (this.driver === 'supabase') {
-      if (!this.supabase) {
-        throw new InternalServerErrorException('Object storage is not configured');
+    try {
+      if (this.driver === 'supabase') {
+        if (!this.supabase) {
+          throw new InternalServerErrorException(
+            'Object storage is not configured. Set STORAGE_DRIVER=supabase with SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY on the API.',
+          );
+        }
+
+        const storagePath = `${folder}/${filename}`;
+        const { error } = await this.supabase.storage
+          .from(this.bucket)
+          .upload(storagePath, file.buffer, {
+            contentType: file.mimetype,
+            upsert: false,
+          });
+
+        if (error) {
+          this.logger.error(
+            `Could not upload "${storagePath}" to bucket "${this.bucket}": ${error.message}`,
+          );
+          throw new InternalServerErrorException(
+            `Could not store uploaded image. Check Supabase bucket "${this.bucket}" exists and is public.`,
+          );
+        }
+
+        return this.supabase.storage.from(this.bucket).getPublicUrl(storagePath).data.publicUrl;
       }
 
-      const storagePath = `${folder}/${filename}`;
-      const { error } = await this.supabase.storage
-        .from(this.bucket)
-        .upload(storagePath, file.buffer, {
-          contentType: file.mimetype,
-          upsert: false,
-        });
+      await mkdir(directory, { recursive: true });
+      await writeFile(join(directory, filename), file.buffer);
 
-      if (error) {
-        this.logger.error(`Could not upload "${storagePath}": ${error.message}`);
-        throw new InternalServerErrorException('Could not store uploaded image');
+      return `${publicPrefix}${filename}`;
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof InternalServerErrorException) {
+        throw error;
       }
 
-      return this.supabase.storage.from(this.bucket).getPublicUrl(storagePath).data.publicUrl;
+      this.logger.error(
+        `Storage save failed (${this.driver}, ${folder}): ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw new InternalServerErrorException(
+        this.driver === 'supabase'
+          ? 'Could not store uploaded image'
+          : 'Could not store uploaded image on server disk. Use STORAGE_DRIVER=supabase in production.',
+      );
     }
-
-    await mkdir(directory, { recursive: true });
-    await writeFile(join(directory, filename), file.buffer);
-
-    return `${publicPrefix}${filename}`;
   }
 
   private getSupabaseStoragePath(publicUrl: string): string | null {
