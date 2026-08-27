@@ -91,7 +91,7 @@ curl https://api.almadinauraangroup.com/api/v1/health
 The project uses OpenNext on Cloudflare Workers. Incremental cache uses Workers
 Static Assets (no R2 bucket / no paid storage required).
 
-Set these build-time variables in Cloudflare:
+Set these build-time variables in Cloudflare (or rely on committed `apps/web/.env.production`):
 
 ```text
 NEXT_PUBLIC_API_URL=https://api.almadinauraangroup.com/api/v1
@@ -101,6 +101,8 @@ NEXT_PUBLIC_WHATSAPP_NUMBER=...
 NEXT_PUBLIC_CONTACT_EMAIL=...
 NEXT_PUBLIC_CONTACT_PHONE=...
 ```
+
+`NEXT_PUBLIC_*` values are baked in at build time. If they are missing, the Worker calls `localhost` and the public site shows an empty tournament list.
 
 Build and deploy from the repository root:
 
