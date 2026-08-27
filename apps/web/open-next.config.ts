@@ -3,7 +3,9 @@ import staticAssetsIncrementalCache from '@opennextjs/cloudflare/overrides/incre
 
 // No R2/KV — free Workers-only deploy (no paid storage).
 // Build-time pages are served from Workers Static Assets.
+// Cache interception must stay off without a real queue (R2/DO); otherwise
+// the dummy queue's send() throws in routingHandler → permanent 500s.
 export default defineCloudflareConfig({
   incrementalCache: staticAssetsIncrementalCache,
-  enableCacheInterception: true,
+  enableCacheInterception: false,
 });
