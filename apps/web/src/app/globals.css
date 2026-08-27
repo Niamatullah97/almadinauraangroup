@@ -608,7 +608,7 @@ nav a:hover {
   border-top: 1px solid var(--color-border);
   color: var(--color-muted);
   padding: 2rem 0;
-  margin-top: 4rem;
+  margin-top: auto;
 }
 
 .footer-inner {
