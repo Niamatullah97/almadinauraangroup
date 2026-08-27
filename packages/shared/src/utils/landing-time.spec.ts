@@ -1,4 +1,5 @@
 import { RaceDayStatus } from '../types/race-day';
+
 import {
   assertOrganizerRaceDayIsLive,
   assertRaceDayAcceptsLandingTimes,
@@ -43,10 +44,9 @@ describe('landing-time utils', () => {
   });
 
   describe('combineRaceDateAndLandingTime', () => {
-    it('combines race date and HH:mm time in local timezone', () => {
+    it('combines race date and HH:mm time in Asia/Karachi', () => {
       const result = combineRaceDateAndLandingTime('2026-04-01', '14:35');
-      expect(result.getHours()).toBe(14);
-      expect(result.getMinutes()).toBe(35);
+      expect(result.toISOString()).toBe(new Date('2026-04-01T14:35:00+05:00').toISOString());
     });
   });
 
@@ -67,8 +67,8 @@ describe('landing-time utils', () => {
   });
 
   describe('formatLandingTimeForInput', () => {
-    it('formats datetime to HH:mm:ss', () => {
-      const formatted = formatLandingTimeForInput(new Date(2026, 3, 1, 14, 35, 22));
+    it('formats datetime to HH:mm:ss in Asia/Karachi', () => {
+      const formatted = formatLandingTimeForInput(new Date('2026-04-01T14:35:22+05:00'));
       expect(formatted).toBe('14:35:22');
     });
   });

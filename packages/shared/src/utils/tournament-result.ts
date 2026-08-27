@@ -15,18 +15,16 @@ import {
   TournamentResultInput,
   TournamentResultPigeonInput,
 } from '../types/tournament-result';
+
 import { formatLandingTimeForInput } from './landing-time';
+import { combineDateAndClockTime } from './timezone';
 
 export function combineReleaseDateTime(raceDate: string, releaseTime: string): Date {
-  const [year, month, day] = raceDate.split('-').map(Number);
-  const [hours, minutes] = releaseTime.split(':').map(Number);
-  const release = new Date(year, month - 1, day, hours, minutes, 0, 0);
-
-  if (Number.isNaN(release.getTime())) {
+  try {
+    return combineDateAndClockTime(raceDate, releaseTime);
+  } catch {
     throw new Error('Invalid race release date/time');
   }
-
-  return release;
 }
 
 export function toDateString(date: Date): string {

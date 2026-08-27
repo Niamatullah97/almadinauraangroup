@@ -1,5 +1,7 @@
 import { RaceDayStatus } from '../types/race-day';
 
+import { combineDateAndClockTime, formatClockInAppTimezone } from './timezone';
+
 export function assertRaceDayAcceptsLandingTimes(status: RaceDayStatus): void {
   if (status !== RaceDayStatus.LIVE) {
     throw new Error('Landing times can only be entered while the race day is Live');
@@ -14,15 +16,12 @@ export function assertOrganizerRaceDayIsLive(status: RaceDayStatus): void {
 
 export function combineRaceDateAndLandingTime(raceDate: string, landingTime: string): Date {
   const normalizedTime = normalizeLandingTimeInput(landingTime);
-  const [year, month, day] = raceDate.split('-').map(Number);
-  const [hours, minutes, seconds] = normalizedTime.split(':').map(Number);
 
-  const date = new Date(year, month - 1, day, hours, minutes, seconds || 0);
-  if (Number.isNaN(date.getTime())) {
+  try {
+    return combineDateAndClockTime(raceDate, normalizedTime, { includeSeconds: true });
+  } catch {
     throw new Error('Landing time format is invalid');
   }
-
-  return date;
 }
 
 export function normalizeLandingTimeInput(value: string): string {
@@ -46,10 +45,7 @@ export function normalizeLandingTimeInput(value: string): string {
 
 export function formatLandingTimeForInput(value: string | Date): string {
   const date = typeof value === 'string' ? new Date(value) : value;
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
-  return `${hours}:${minutes}:${seconds}`;
+  return formatClockInAppTimezone(date);
 }
 
 export function formatClockHms(totalSeconds: number): string {

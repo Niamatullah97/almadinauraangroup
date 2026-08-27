@@ -3,6 +3,7 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 import { RaceDayStatus } from '@prisma/client';
 
 import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
+
 import { LandingTimesService } from './landing-times.service';
 
 describe('LandingTimesService', () => {
@@ -38,14 +39,15 @@ describe('LandingTimesService', () => {
     raceDayId: 'race-day-1',
     participantId: 'participant-1',
     registrationPigeonId: 'pigeon-1',
-    landingTime: new Date(2026, 3, 1, 14, 35, 22),
+    landingTime: new Date('2026-04-01T14:35:22+05:00'),
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-01-01'),
     deletedAt: null,
   };
 
   beforeEach(() => {
-    jest.useFakeTimers().setSystemTime(new Date(2026, 3, 1, 12, 0, 0));
+    // Mid-window in Asia/Karachi (race 06:30–18:00 PKT).
+    jest.useFakeTimers().setSystemTime(new Date('2026-04-01T08:00:00.000Z'));
     prisma = {
       raceDay: { findFirst: jest.fn() },
       tournament: {
@@ -154,7 +156,7 @@ describe('LandingTimesService', () => {
   });
 
   it('rejects edits after the race-day end', async () => {
-    jest.setSystemTime(new Date(2026, 3, 1, 18, 0, 1));
+    jest.setSystemTime(new Date('2026-04-01T13:00:01.000Z'));
     prisma.raceDay.findFirst.mockResolvedValue(raceDay);
 
     await expect(
