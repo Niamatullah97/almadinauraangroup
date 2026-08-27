@@ -131,8 +131,10 @@ API_URL=https://api.almadinauraangroup.com/api/v1
 UPLOADS_URL=https://abeewdprilovdbaynbdh.supabase.co/storage/v1/object/public/kabootar
 ```
 
-The build generates Angular's production environment file. `_redirects` provides SPA route fallback.
-Attach `admin.almadinauraangroup.com` after the Pages deployment is healthy.
+The build generates Angular's production environment file. SPA route fallback is handled by
+`assets.not_found_handling: single-page-application` in `apps/admin/wrangler.jsonc` (do not ship a
+`_redirects` file — Workers rejects `/* /index.html 200` as an infinite loop).
+Attach `admin.almadinauraangroup.com` after the Workers deployment is healthy.
 
 ## 6. Release Order and Smoke Test
 
