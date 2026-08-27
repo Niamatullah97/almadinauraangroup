@@ -113,14 +113,18 @@ Attach `almadinauraangroup.com` and optionally `www.almadinauraangroup.com` as W
 
 ## 5. Cloudflare Pages — Angular Admin
 
-Create a Pages project connected to the same repository:
+Create a **Workers** project (Cloudflare merged Pages into Workers) connected to the same repository:
 
-- Root directory: repository root
+- Root directory: repository root (leave empty / `/`)
 - Build command: `pnpm build:admin:cloudflare`
-- Output directory: `apps/admin/dist/admin/browser`
-- Node.js: 20
+- Deploy command: `pnpm --filter @kabootar/admin exec wrangler deploy`
+- Node.js: 22
+- Install command: `HUSKY=0 pnpm install --frozen-lockfile` (optional; set `HUSKY=0` if hooks fail)
 
-Add build variables:
+The admin ships as a static SPA via Workers Static Assets (`apps/admin/wrangler.jsonc` with
+`not_found_handling: single-page-application`). Do not use `npx wrangler deploy` from the repo root.
+
+Add **build** variables:
 
 ```text
 API_URL=https://api.almadinauraangroup.com/api/v1

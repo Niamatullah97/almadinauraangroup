@@ -11,6 +11,7 @@
     "build:web:cloudflare": "pnpm --filter @kabootar/shared build && pnpm --filter @kabootar/web build:cf",
     "deploy:web:cloudflare": "pnpm --filter @kabootar/shared build && pnpm --filter @kabootar/web deploy:cf",
     "build:admin:cloudflare": "pnpm --filter @kabootar/shared build && pnpm --filter @kabootar/admin build:cf",
+    "deploy:admin:cloudflare": "pnpm --filter @kabootar/shared build && pnpm --filter @kabootar/admin build:cf && pnpm --filter @kabootar/admin deploy:cf",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",

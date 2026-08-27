@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "admin-almadinauraangroup",
+  "compatibility_date": "2026-08-21",
+  "assets": {
+    "directory": "./dist/admin/browser",
+    "not_found_handling": "single-page-application",
+  },
+  "observability": {
+    "enabled": true,
+  },
+}

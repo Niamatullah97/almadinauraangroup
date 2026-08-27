@@ -5,6 +5,7 @@
   "scripts": {
     "build": "ng build",
     "build:cf": "node scripts/write-cloudflare-env.mjs && ng build --configuration=cloudflare",
+    "deploy:cf": "wrangler deploy",
     "dev": "ng serve --port 4200",
     "lint": "ng lint",
     "lint:fix": "ng lint --fix",
@@ -40,6 +41,6 @@
     "karma-jasmine": "^5.1.0",
     "karma-jasmine-html-reporter": "^2.1.0",
     "rimraf": "^6.0.1",
-    "typescript": "~5.7.3"
+    "wrangler": "^4.125.0"
   }
 }
