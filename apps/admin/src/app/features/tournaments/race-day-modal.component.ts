@@ -23,7 +23,7 @@ import {
           </button>
         </div>
 
-        <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <form class="modal__form" [formGroup]="form" (ngSubmit)="onSubmit()">
           <div class="modal__body">
             <div class="form-field">
               <label class="form-label" for="raceDate">Race date</label>
@@ -39,32 +39,34 @@ import {
               }
             </div>
 
-            <div class="form-field">
-              <label class="form-label" for="releaseTime">Release time</label>
-              <input
-                id="releaseTime"
-                type="time"
-                class="form-control"
-                formControlName="releaseTime"
-                [class.is-invalid]="showError('releaseTime')"
-              />
-              @if (showError('releaseTime')) {
-                <p class="form-error">Release time is required.</p>
-              }
-            </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label class="form-label" for="releaseTime">Release time</label>
+                <input
+                  id="releaseTime"
+                  type="time"
+                  class="form-control"
+                  formControlName="releaseTime"
+                  [class.is-invalid]="showError('releaseTime')"
+                />
+                @if (showError('releaseTime')) {
+                  <p class="form-error">Release time is required.</p>
+                }
+              </div>
 
-            <div class="form-field">
-              <label class="form-label" for="endTime">End time</label>
-              <input
-                id="endTime"
-                type="time"
-                class="form-control"
-                formControlName="endTime"
-                [class.is-invalid]="showError('endTime')"
-              />
-              @if (showError('endTime')) {
-                <p class="form-error">End time must be after the release time.</p>
-              }
+              <div class="form-field">
+                <label class="form-label" for="endTime">End time</label>
+                <input
+                  id="endTime"
+                  type="time"
+                  class="form-control"
+                  formControlName="endTime"
+                  [class.is-invalid]="showError('endTime')"
+                />
+                @if (showError('endTime')) {
+                  <p class="form-error">End time must be after the release time.</p>
+                }
+              </div>
             </div>
 
             <div class="form-field">

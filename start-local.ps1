@@ -212,10 +212,15 @@ function Sync-DatabaseEnv {
         throw "DATABASE_URL is missing from .env"
     }
 
-    $databaseEnvContent = "DATABASE_URL=$($env:DATABASE_URL)`r`n"
+    if (-not $env:DIRECT_URL) {
+        $env:DIRECT_URL = $env:DATABASE_URL
+        Write-Warn "DIRECT_URL missing from .env; using DATABASE_URL"
+    }
+
+    $databaseEnvContent = "DATABASE_URL=$($env:DATABASE_URL)`r`nDIRECT_URL=$($env:DIRECT_URL)`r`n"
     $utf8NoBom = New-Object System.Text.UTF8Encoding $false
     [System.IO.File]::WriteAllText($databaseEnv, $databaseEnvContent, $utf8NoBom)
-    Write-Ok "Synced DATABASE_URL to packages/database/.env"
+    Write-Ok "Synced DATABASE_URL and DIRECT_URL to packages/database/.env"
 }
 
 function Invoke-Native {
@@ -233,48 +238,7 @@ function Invoke-Native {
 }
 
 function Ensure-NativeModules {
-    Write-Host "    Checking bcrypt native binary..." -ForegroundColor DarkGray
-
-    $databaseDir = Join-Path $Root 'packages\database'
-    $bcryptTest = 'try { require("bcrypt"); process.exit(0) } catch { process.exit(1) }'
-
-    Push-Location $databaseDir
-    try {
-        $testExitCode = Invoke-Native { node -e $bcryptTest 2>$null 1>$null }
-    }
-    finally {
-        Pop-Location
-    }
-
-    if ($testExitCode -eq 0) {
-        Write-Ok "bcrypt native binary is ready"
-        return
-    }
-
-    Write-Warn "bcrypt native binary missing; running install script..."
-
-    Push-Location $databaseDir
-    try {
-        $bcryptPackageJson = node -p "require.resolve('bcrypt/package.json')"
-    }
-    finally {
-        Pop-Location
-    }
-
-    if ($LASTEXITCODE -ne 0 -or -not $bcryptPackageJson) {
-        throw "Could not locate bcrypt package. Run 'pnpm install' first."
-    }
-
-    $bcryptDir = Split-Path $bcryptPackageJson.Trim() -Parent
-    Push-Location $bcryptDir
-    try {
-        Invoke-Checked "Build bcrypt" { npm run install }
-    }
-    finally {
-        Pop-Location
-    }
-
-    Write-Ok "bcrypt native binary built successfully"
+    Write-Ok "Password hashing uses bcryptjs (no native rebuild required)"
 }
 
 Write-Host ""

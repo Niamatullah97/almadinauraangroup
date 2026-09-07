@@ -1,5 +1,5 @@
-import { Component, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { Component, input, output } from '@angular/core';
 import {
   REGISTRATION_PAYMENT_STATUS_LABELS,
   RegistrationPaymentStatus,
@@ -16,7 +16,9 @@ import {
       <div class="modal receipt-modal" role="dialog" aria-modal="true">
         <div class="modal__header">
           <h3>Registration receipt</h3>
-          <button type="button" class="modal__close" (click)="close.emit()" aria-label="Close">×</button>
+          <button type="button" class="modal__close" (click)="close.emit()" aria-label="Close">
+            ×
+          </button>
         </div>
 
         <div class="modal__body receipt-modal__body">
@@ -37,19 +39,15 @@ import {
               <strong>{{ registration()!.tournament?.city }}</strong>
             </div>
             <div>
-              <span class="receipt-label">Participant</span>
-              <strong>{{ registration()!.participant?.name }}</strong>
-            </div>
-            <div>
               <span class="receipt-label">Loft</span>
-              <strong>{{ registration()!.participant?.loftName }}</strong>
+              <strong>{{ registration()!.participant?.name }}</strong>
             </div>
             <div>
               <span class="receipt-label">Pigeons</span>
               <strong>{{ registration()!.pigeonCount }}</strong>
             </div>
             <div>
-              <span class="receipt-label">Entry fee / pigeon</span>
+              <span class="receipt-label">Entry fee</span>
               <strong>{{ formatCurrency(registration()!.entryFeePerPigeon) }}</strong>
             </div>
             <div>

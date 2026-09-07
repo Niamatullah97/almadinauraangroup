@@ -24,7 +24,9 @@ export interface RegistrationFormSubmit {
       <div class="modal modal--wide" role="dialog" aria-modal="true">
         <div class="modal__header">
           <h3>{{ registration() ? 'Edit participant' : 'Add participant' }}</h3>
-          <button type="button" class="modal__close" (click)="close.emit()" aria-label="Close">×</button>
+          <button type="button" class="modal__close" (click)="close.emit()" aria-label="Close">
+            ×
+          </button>
         </div>
 
         <form [formGroup]="form" (ngSubmit)="onSubmit()">
@@ -50,7 +52,7 @@ export interface RegistrationFormSubmit {
               </div>
 
               <div class="form-field">
-                <label class="form-label" for="name">Name</label>
+                <label class="form-label" for="name">Loft name</label>
                 <input
                   id="name"
                   type="text"
@@ -59,12 +61,12 @@ export interface RegistrationFormSubmit {
                   [class.is-invalid]="showError('name')"
                 />
                 @if (showError('name')) {
-                  <p class="form-error">Name is required.</p>
+                  <p class="form-error">Loft name is required.</p>
                 }
               </div>
 
               <div class="form-field">
-                <label class="form-label" for="fatherName">Father name</label>
+                <label class="form-label" for="fatherName">Ustaad name</label>
                 <input
                   id="fatherName"
                   type="text"
@@ -73,7 +75,7 @@ export interface RegistrationFormSubmit {
                   [class.is-invalid]="showError('fatherName')"
                 />
                 @if (showError('fatherName')) {
-                  <p class="form-error">Father name is required.</p>
+                  <p class="form-error">Ustaad name must be at least 2 characters.</p>
                 }
               </div>
 
@@ -102,21 +104,7 @@ export interface RegistrationFormSubmit {
                   [class.is-invalid]="showError('city')"
                 />
                 @if (showError('city')) {
-                  <p class="form-error">City is required.</p>
-                }
-              </div>
-
-              <div class="form-field">
-                <label class="form-label" for="loftName">Loft name</label>
-                <input
-                  id="loftName"
-                  type="text"
-                  class="form-control"
-                  formControlName="loftName"
-                  [class.is-invalid]="showError('loftName')"
-                />
-                @if (showError('loftName')) {
-                  <p class="form-error">Loft name is required.</p>
+                  <p class="form-error">City must be 120 characters or fewer.</p>
                 }
               </div>
 
@@ -134,7 +122,13 @@ export interface RegistrationFormSubmit {
           <div class="modal__actions">
             <button type="button" class="btn btn-secondary" (click)="close.emit()">Cancel</button>
             <button type="submit" class="btn btn-primary" [disabled]="submitting() || form.invalid">
-              {{ submitting() ? 'Saving...' : registration() ? 'Update participant' : 'Add participant' }}
+              {{
+                submitting()
+                  ? 'Saving...'
+                  : registration()
+                    ? 'Update participant'
+                    : 'Add participant'
+              }}
             </button>
           </div>
         </form>
@@ -167,11 +161,10 @@ export class RegistrationModalComponent {
 
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(150)]],
-    fatherName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(150)]],
-    phone: ['', [Validators.required, Validators.pattern(/^[+]?[\d\s-]{7,20}$/)]],
-    city: ['', [Validators.required, Validators.maxLength(120)]],
+    fatherName: ['', [Validators.minLength(2), Validators.maxLength(150)]],
+    phone: ['', [Validators.pattern(/^[+]?[\d\s-]{7,20}$/)]],
+    city: ['', [Validators.maxLength(120)]],
     address: [''],
-    loftName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(150)]],
   });
 
   constructor() {
@@ -190,7 +183,6 @@ export class RegistrationModalComponent {
           phone: participant?.phone ?? '',
           city: participant?.city ?? '',
           address: participant?.address ?? '',
-          loftName: participant?.loftName ?? '',
         });
         this.initials.set(this.participantService.getInitials(participant?.name ?? ''));
         this.profilePreview.set(
@@ -203,7 +195,6 @@ export class RegistrationModalComponent {
           phone: '',
           city: '',
           address: '',
-          loftName: '',
         });
         this.initials.set('?');
         this.profilePreview.set(null);
@@ -215,7 +206,7 @@ export class RegistrationModalComponent {
     });
   }
 
-  showError(field: 'name' | 'fatherName' | 'phone' | 'city' | 'loftName'): boolean {
+  showError(field: 'name' | 'fatherName' | 'phone' | 'city'): boolean {
     const control = this.form.controls[field];
     return control.invalid && (control.dirty || control.touched);
   }
@@ -259,7 +250,7 @@ export class RegistrationModalComponent {
       fatherName: value.fatherName,
       phone: value.phone,
       city: value.city,
-      loftName: value.loftName,
+      loftName: value.name,
       ...(value.address && { address: value.address }),
     };
 

@@ -6,12 +6,12 @@ import {
 
 describe('registration utils', () => {
   describe('calculateRegistrationTotalFee', () => {
-    it('multiplies entry fee by pigeon count', () => {
-      expect(calculateRegistrationTotalFee(500, 3)).toBe(1500);
+    it('charges the entry fee once per participant', () => {
+      expect(calculateRegistrationTotalFee(500, 3)).toBe(500);
     });
 
     it('rounds to two decimal places', () => {
-      expect(calculateRegistrationTotalFee(99.99, 3)).toBe(299.97);
+      expect(calculateRegistrationTotalFee(99.99, 3)).toBe(99.99);
     });
   });
 

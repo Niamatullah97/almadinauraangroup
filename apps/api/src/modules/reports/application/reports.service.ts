@@ -12,6 +12,7 @@ import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
 import { LandingTimesService } from '../../landing-times/application/landing-times.service';
 import { ResultsService } from '../../results/application/results.service';
 import { slugifyFilename } from '../infrastructure/report-format';
+
 import { ExcelGeneratorService } from './excel-generator.service';
 import {
   PdfGeneratorService,
@@ -158,9 +159,9 @@ export class ReportsService {
 
     const rows = registrations.map((registration) => ({
       participantName: registration.participant.name,
-      fatherName: registration.participant.fatherName,
-      phone: registration.participant.phone,
-      city: registration.participant.city,
+      fatherName: registration.participant.fatherName ?? '',
+      phone: registration.participant.phone ?? '',
+      city: registration.participant.city ?? '',
       loftName: registration.participant.loftName,
       pigeonCount: registration.pigeonCount,
       totalFee: Number(registration.totalFee),

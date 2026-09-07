@@ -2,9 +2,9 @@ export interface ParticipantDto {
   id: string;
   tournamentId: string;
   name: string;
-  fatherName: string;
-  phone: string;
-  city: string;
+  fatherName: string | null;
+  phone: string | null;
+  city: string | null;
   address: string | null;
   loftName: string;
   profileImage: string | null;
@@ -15,11 +15,11 @@ export interface ParticipantDto {
 export interface CreateParticipantRequest {
   tournamentId: string;
   name: string;
-  fatherName: string;
-  phone: string;
-  city: string;
+  fatherName?: string | null;
+  phone?: string | null;
+  city?: string | null;
   address?: string;
-  loftName: string;
+  loftName?: string;
 }
 
 export type UpdateParticipantRequest = Partial<Omit<CreateParticipantRequest, 'tournamentId'>>;

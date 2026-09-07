@@ -1,3 +1,5 @@
+@use '../../../styles/variables' as *;
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -11,43 +13,112 @@
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 80;
+  display: flex;
+  flex-direction: column;
   width: min(92vw, 520px);
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
+  max-height: min(90dvh, calc(100dvh - 1.5rem));
+  background: $color-surface;
+  border-radius: $radius-md;
+  box-shadow: $shadow-lg;
+  overflow: hidden;
 }
 
 .modal__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.25rem 1.5rem 0;
+  gap: $spacing-md;
+  flex-shrink: 0;
+  padding: $spacing-lg $spacing-lg 0;
 }
 
 .modal__header h3 {
   font-size: 1.125rem;
   font-weight: 700;
+  min-width: 0;
 }
 
 .modal__close {
+  flex-shrink: 0;
   border: none;
   background: transparent;
   font-size: 1.5rem;
   line-height: 1;
   cursor: pointer;
-  color: #64748b;
+  color: $color-text-muted;
+}
+
+.modal__form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
 }
 
 .modal__body {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
+  gap: $spacing-md;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: $spacing-md $spacing-lg;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $spacing-md;
+
+  @media (min-width: 480px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.form-control[type='date'],
+.form-control[type='time'] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+textarea.form-control {
+  min-height: 88px;
 }
 
 .modal__actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 0.75rem;
-  padding: 0 1.5rem 1.5rem;
+  gap: $spacing-sm;
+  flex-shrink: 0;
+  padding: 0 $spacing-lg $spacing-lg;
+}
+
+@media (max-width: 640px) {
+  .modal {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: none;
+    width: 100%;
+    max-height: min(92dvh, 100dvh);
+    border-radius: $radius-lg $radius-lg 0 0;
+  }
+
+  .modal__header,
+  .modal__body {
+    padding-left: $spacing-md;
+    padding-right: $spacing-md;
+  }
+
+  .modal__actions {
+    flex-direction: column-reverse;
+    padding: $spacing-sm $spacing-md max($spacing-md, env(safe-area-inset-bottom));
+
+    .btn {
+      width: 100%;
+    }
+  }
 }

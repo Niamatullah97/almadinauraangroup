@@ -34,3 +34,9 @@
   background: #f0fdf4;
   color: #16a34a;
 }
+
+@media (max-width: 640px) {
+  .page-toolbar .btn {
+    width: 100%;
+  }
+}

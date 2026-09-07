@@ -1,13 +1,10 @@
 import {
-  assertOrganizerRaceDayIsLive,
-  assertRaceDayAcceptsLandingTimes,
   combineRaceDateAndLandingTime,
   combineReleaseDateTime,
   findDuplicateRegistrationPigeonIds,
   formatLandingTimeForInput,
   isOrganizerToken,
   JwtPayload,
-  RaceDayStatus,
 } from '@kabootar/shared';
 import {
   BadRequestException,
@@ -76,7 +73,7 @@ export class LandingTimesService {
       participants: registrations.map((registration) => ({
         participantId: registration.participantId,
         participantName: registration.participant.name,
-        loftName: registration.participant.loftName,
+        loftName: registration.participant.name,
         profileImage: registration.participant.profileImage,
         pigeons: registration.pigeons.map((pigeon) => {
           const landing = pigeon.landingTimes[0];
@@ -286,29 +283,19 @@ export class LandingTimesService {
   private async getRaceDayForMutation(tournamentId: string, raceDayId: string, actor?: JwtPayload) {
     const raceDay = await this.getRaceDayOrThrow(tournamentId, raceDayId);
 
-    try {
-      if (actor && isOrganizerToken(actor)) {
-        assertOrganizerRaceDayIsLive(raceDay.status as RaceDayStatus);
-      } else {
-        assertRaceDayAcceptsLandingTimes(raceDay.status as RaceDayStatus);
-      }
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Race day does not accept landing times',
-      );
-    }
-
     const raceDate = raceDay.raceDate.toISOString().slice(0, 10);
     const startsAt = combineReleaseDateTime(raceDate, raceDay.releaseTime);
     const endsAt = combineReleaseDateTime(raceDate, raceDay.endTime);
     const now = new Date();
 
-    if (now.getTime() < startsAt.getTime()) {
-      throw new BadRequestException('Landing times cannot be entered before the race day starts');
-    }
+    if (actor && isOrganizerToken(actor)) {
+      if (now.getTime() < startsAt.getTime()) {
+        throw new BadRequestException('Landing times cannot be entered before the race day starts');
+      }
 
-    if (now.getTime() > endsAt.getTime()) {
-      throw new BadRequestException('Landing times cannot be edited after the race day ends');
+      if (now.getTime() > endsAt.getTime()) {
+        throw new BadRequestException('Landing times cannot be edited after the race day ends');
+      }
     }
 
     return raceDay;

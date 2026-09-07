@@ -73,7 +73,8 @@ export default async function DoubleStampResultsPage({ params }: Props) {
         lastWinner={results.lastWinner}
         averageWinner={results.averageWinner}
         rankings={results.rankings}
-        compactPigeonColumns
+        doubleStampView
+        showWinners={false}
       />
     </div>
   );

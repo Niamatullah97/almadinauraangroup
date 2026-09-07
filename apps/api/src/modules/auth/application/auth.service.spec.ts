@@ -1,12 +1,19 @@
 import { Permission, UserRole } from '@kabootar/shared';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserStatus } from '@prisma/client';
+import { compare, hash } from 'bcryptjs';
 
 import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
 
 import { AuthService } from './auth.service';
+
+jest.mock('bcryptjs', () => ({
+  compare: jest.fn(),
+  hash: jest.fn(),
+}));
 
 const mockUser = {
   id: 'user-1',
@@ -27,7 +34,7 @@ const mockUser = {
 describe('AuthService', () => {
   let service: AuthService;
   let prisma: {
-    user: { findUnique: jest.Mock; create: jest.Mock };
+    user: { findUnique: jest.Mock; findFirst: jest.Mock; create: jest.Mock };
     role: { findUnique: jest.Mock };
     refreshToken: {
       create: jest.Mock;
@@ -40,7 +47,7 @@ describe('AuthService', () => {
 
   beforeEach(async () => {
     prisma = {
-      user: { findUnique: jest.fn(), create: jest.fn() },
+      user: { findUnique: jest.fn(), findFirst: jest.fn(), create: jest.fn() },
       role: { findUnique: jest.fn() },
       refreshToken: {
         create: jest.fn(),
@@ -75,7 +82,7 @@ describe('AuthService', () => {
 
   describe('login', () => {
     it('throws UnauthorizedException when user not found', async () => {
-      prisma.user.findUnique.mockResolvedValue(null);
+      prisma.user.findFirst.mockResolvedValue(null);
 
       await expect(service.login({ email: 'test@test.com', password: 'password' })).rejects.toThrow(
         UnauthorizedException,
@@ -83,7 +90,7 @@ describe('AuthService', () => {
     });
 
     it('throws UnauthorizedException when password is invalid', async () => {
-      prisma.user.findUnique.mockResolvedValue(mockUser);
+      prisma.user.findFirst.mockResolvedValue(mockUser);
       (compare as jest.Mock).mockResolvedValue(false);
 
       await expect(service.login({ email: 'test@test.com', password: 'wrong' })).rejects.toThrow(
@@ -92,7 +99,7 @@ describe('AuthService', () => {
     });
 
     it('throws UnauthorizedException when user is suspended', async () => {
-      prisma.user.findUnique.mockResolvedValue({
+      prisma.user.findFirst.mockResolvedValue({
         ...mockUser,
         status: UserStatus.SUSPENDED,
       });
@@ -103,7 +110,7 @@ describe('AuthService', () => {
     });
 
     it('returns user and tokens on successful login', async () => {
-      prisma.user.findUnique.mockResolvedValue(mockUser);
+      prisma.user.findFirst.mockResolvedValue(mockUser);
       (compare as jest.Mock).mockResolvedValue(true);
       prisma.refreshToken.create.mockResolvedValue({});
 
@@ -123,11 +130,25 @@ describe('AuthService', () => {
         expect.any(Object),
       );
     });
+
+    it('looks up email case-insensitively', async () => {
+      prisma.user.findFirst.mockResolvedValue(mockUser);
+      (compare as jest.Mock).mockResolvedValue(true);
+      prisma.refreshToken.create.mockResolvedValue({});
+
+      await service.login({ email: '  Test@Test.COM ', password: 'password' });
+
+      expect(prisma.user.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { email: { equals: 'test@test.com', mode: 'insensitive' } },
+        }),
+      );
+    });
   });
 
   describe('register', () => {
     it('throws ConflictException when email exists', async () => {
-      prisma.user.findUnique.mockResolvedValue({ id: 'existing' });
+      prisma.user.findFirst.mockResolvedValue({ id: 'existing' });
 
       await expect(
         service.register({
@@ -140,7 +161,7 @@ describe('AuthService', () => {
     });
 
     it('creates participant user with tokens', async () => {
-      prisma.user.findUnique.mockResolvedValue(null);
+      prisma.user.findFirst.mockResolvedValue(null);
       prisma.role.findUnique.mockResolvedValue({ id: 'role-1', slug: UserRole.PARTICIPANT });
       (hash as jest.Mock).mockResolvedValue('hashed');
       prisma.user.create.mockResolvedValue(mockUser);

@@ -1,8 +1,9 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { TournamentStatus } from '@prisma/client';
 
-import { RegistrationsService } from './registrations.service';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
+
+import { RegistrationsService } from './registrations.service';
 
 describe('RegistrationsService', () => {
   let service: RegistrationsService;
@@ -111,13 +112,13 @@ describe('RegistrationsService', () => {
   });
 
   describe('fee calculation', () => {
-    it('calculates total fee from tournament entry fee and pigeon count', async () => {
+    it('calculates total fee from tournament entry fee once per participant', async () => {
       prisma.tournament.findFirst.mockResolvedValue(tournament);
 
       const result = await service.previewFee('tournament-1', 4);
 
       expect(result.entryFeePerPigeon).toBe(500);
-      expect(result.totalFee).toBe(2000);
+      expect(result.totalFee).toBe(500);
       expect(result.remainingPigeonSlots).toBe(6);
     });
   });
@@ -173,8 +174,8 @@ describe('RegistrationsService', () => {
       prisma.tournamentRegistration.create.mockResolvedValue({
         ...registration,
         pigeonCount: 10,
-        totalFee: 5000,
-        paidAmount: 5000,
+        totalFee: 500,
+        paidAmount: 500,
         paymentStatus: 'PAID',
       });
 
@@ -194,12 +195,12 @@ describe('RegistrationsService', () => {
         expect.objectContaining({
           data: expect.objectContaining({
             pigeonCount: 10,
-            totalFee: 5000,
-            paidAmount: 5000,
+            totalFee: 500,
+            paidAmount: 500,
             paymentStatus: 'PAID',
             payments: {
               create: {
-                amount: 5000,
+                amount: 500,
                 notes: 'Paid at registration',
               },
             },

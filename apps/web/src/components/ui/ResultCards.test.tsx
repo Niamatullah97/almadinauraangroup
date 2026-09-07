@@ -50,7 +50,7 @@ describe('ResultCards', () => {
 
     expect(screen.getByText('First Winner')).toBeInTheDocument();
     expect(screen.getByText('Ali Khan')).toBeInTheDocument();
-    expect(screen.getByText('12:58:00')).toBeInTheDocument();
+    expect(screen.getByText('Landed 12:58:00')).toBeInTheDocument();
   });
 
   it('renders empty winner state', () => {
@@ -114,10 +114,10 @@ describe('ResultCards', () => {
     expect(screen.getByText('Flying time 05:45')).toBeInTheDocument();
   });
 
-  it('omits empty pigeon columns in compact mode', () => {
+  it('shows a single Pigeon column with landing time in double stamp view', () => {
     render(
       <RankingTable
-        compactPigeonColumns
+        doubleStampView
         rows={[
           {
             participantId: 'p1',
@@ -147,8 +147,15 @@ describe('ResultCards', () => {
       />,
     );
 
+    expect(screen.getByText('Pigeon')).toBeInTheDocument();
     expect(screen.queryByText('Pigeon 1')).not.toBeInTheDocument();
-    expect(screen.getByText('Pigeon 2')).toBeInTheDocument();
+    expect(screen.queryByText('Pigeon 2')).not.toBeInTheDocument();
+    expect(screen.getByText('04:15:00')).toBeInTheDocument();
+    expect(
+      screen.queryByText('04:15:00').closest('td')?.querySelector('.timetable-cumulative'),
+    ).toBeNull();
+    expect(screen.queryByText('Double stamp')).not.toBeInTheDocument();
+    expect(screen.queryByText('Total')).not.toBeInTheDocument();
   });
 
   it('calculates the total column from race day totals', () => {

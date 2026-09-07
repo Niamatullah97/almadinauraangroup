@@ -1,8 +1,9 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 
-import { ParticipantsService } from './participants.service';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
 import { StorageService } from '../../../infrastructure/storage/storage.service';
+
+import { ParticipantsService } from './participants.service';
 
 describe('ParticipantsService', () => {
   let service: ParticipantsService;
@@ -73,10 +74,17 @@ describe('ParticipantsService', () => {
       fatherName: 'Muhammad Khan',
       phone: '+923001234567',
       city: 'Lahore',
-      loftName: 'Sky Loft',
     });
 
-    expect(result.loftName).toBe('Sky Loft');
+    expect(prisma.participant.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          name: 'Ahmed Khan',
+          loftName: 'Ahmed Khan',
+        }),
+      }),
+    );
+    expect(result.name).toBe('Ahmed Khan');
   });
 
   it('rejects duplicate phone numbers', async () => {
@@ -89,7 +97,6 @@ describe('ParticipantsService', () => {
         fatherName: 'Other',
         phone: '+923001234567',
         city: 'Lahore',
-        loftName: 'Loft',
       }),
     ).rejects.toBeInstanceOf(ConflictException);
   });

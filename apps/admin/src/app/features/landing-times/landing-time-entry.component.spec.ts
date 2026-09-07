@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 import { ParticipantService } from '../participants/participant.service';
 import { RaceDayService } from '../tournaments/race-day.service';
 import { TournamentService } from '../tournaments/tournament.service';
+
 import { LandingTimeEntryComponent } from './landing-time-entry.component';
 import { LandingTimeService } from './landing-time.service';
 
@@ -126,20 +127,36 @@ describe('LandingTimeEntryComponent', () => {
     fixture.detectChanges();
     expect(fixture.componentInstance.canSave()).toBeTrue();
     expect(fixture.nativeElement.querySelector('.landing-entry__time-input')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.landing-entry__time-input').disabled).toBeFalse();
     expect(
       fixture.componentInstance.cellFlightTime(
         fixture.componentInstance.participantRows()[0].cells[0]!,
       ),
     ).toBe('08:05:22');
+    expect(
+      fixture.componentInstance.cellSubtotal(fixture.componentInstance.participantRows()[0], 0),
+    ).toBe('08:05:22');
     expect(fixture.componentInstance.rowTotal(fixture.componentInstance.participantRows()[0])).toBe(
       '08:05:22',
     );
+    expect(fixture.componentInstance.autoSave).toBeTrue();
   });
 
-  it('should disable entry after the race-day end time', () => {
+  it('keeps pigeon cells enabled for superadmin after the race-day end time', () => {
     fixture.componentInstance.onTournamentChange('tournament-1');
     fixture.componentInstance.onRaceDayChange('race-day-1');
     jasmine.clock().mockDate(new Date(2026, 3, 1, 18, 0, 1));
+    jasmine.clock().tick(1000);
+
+    expect(fixture.componentInstance.canEnterTimes()).toBeTrue();
+  });
+
+  it('disables organizer entry after the race-day end time', () => {
+    fixture.componentRef.setInput('requireLiveRaceDay', true);
+    fixture.componentInstance.onTournamentChange('tournament-1');
+    fixture.componentInstance.onRaceDayChange('race-day-1');
+    fixture.detectChanges();
+    jasmine.clock().mockDate(new Date('2026-04-01T13:00:01.000Z'));
     jasmine.clock().tick(1000);
 
     expect(fixture.componentInstance.canEnterTimes()).toBeFalse();

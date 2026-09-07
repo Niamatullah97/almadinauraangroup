@@ -4,9 +4,9 @@ import {
   LandingTimeEntrySheetResponse,
   RACE_DAY_STATUS_LABELS,
   RaceDayDto,
-  RaceDayStatus,
   TournamentDto,
   clockTimeToSeconds,
+  combineDateAndClockTime,
   formatClockHms,
   formatTypedClockTime,
   normalizeLandingTimeInput,
@@ -15,6 +15,7 @@ import {
 import { ParticipantService } from '../participants/participant.service';
 import { RaceDayService } from '../tournaments/race-day.service';
 import { TournamentService } from '../tournaments/tournament.service';
+
 import { LandingTimeService } from './landing-time.service';
 
 interface EntryCell {
@@ -106,7 +107,7 @@ interface ParticipantEntryRow {
           </div>
 
           <div class="form-field">
-            <label class="form-label" for="participant">Participant</label>
+            <label class="form-label" for="participant">Loft</label>
             <select
               id="participant"
               class="form-control"
@@ -114,10 +115,10 @@ interface ParticipantEntryRow {
               [ngModel]="selectedParticipantId()"
               (ngModelChange)="onParticipantChange($event)"
             >
-              <option value="">All participants</option>
+              <option value="">All lofts</option>
               @for (participant of participantOptions(); track participant.id) {
                 <option [value]="participant.id">
-                  {{ participant.name }} · {{ participant.loftName }}
+                  {{ participant.name }}
                 </option>
               }
             </select>
@@ -132,12 +133,9 @@ interface ParticipantEntryRow {
           </p>
         }
 
-        @if (!requireLiveRaceDay() && entrySheet()?.status === pendingStatus) {
-          <p class="form-error">Landing times can only be entered while the race day is Live.</p>
-        }
-        @if (requireLiveRaceDay() && entrySheet() && entrySheet()!.status !== liveStatus) {
+        @if (requireLiveRaceDay() && entrySheet() && !canEnterTimes()) {
           <p class="form-error">
-            Landing times can only be entered after the race day has started.
+            Landing times can be entered between the race start and end time.
           </p>
         }
       </div>
@@ -157,7 +155,7 @@ interface ParticipantEntryRow {
               <tr>
                 <th class="landing-entry__sticky">Sr</th>
                 <th class="landing-entry__sticky landing-entry__sticky--picture">Picture</th>
-                <th class="landing-entry__sticky landing-entry__sticky--name">Name</th>
+                <th class="landing-entry__sticky landing-entry__sticky--name">Loft</th>
                 @for (pigeonNumber of pigeonColumns(); track pigeonNumber) {
                   <th>Pigeon {{ pigeonNumber }}</th>
                 }
@@ -184,7 +182,6 @@ interface ParticipantEntryRow {
                   </td>
                   <td class="landing-entry__sticky landing-entry__sticky--name">
                     <strong>{{ row.participantName }}</strong>
-                    <span class="table-subtext">{{ row.loftName }}</span>
                   </td>
                   @for (cell of row.cells; track $index) {
                     <td class="landing-entry__pigeon-cell">
@@ -206,7 +203,7 @@ interface ParticipantEntryRow {
                             (keydown.enter)="focusNextCell($event)"
                             (blur)="onCellBlur(cell)"
                           />
-                          @if (cellFlightTime(cell); as flightTime) {
+                          @if (cellSubtotal(row, $index); as flightTime) {
                             <span class="landing-entry__cumulative">{{ flightTime }}</span>
                           }
                           @if (doubleStampEnabled()) {
@@ -261,8 +258,6 @@ export class LandingTimeEntryComponent implements OnInit, OnDestroy {
   readonly requireLiveRaceDay = input(false);
 
   readonly statusLabels = RACE_DAY_STATUS_LABELS;
-  readonly pendingStatus = RaceDayStatus.PENDING;
-  readonly liveStatus = RaceDayStatus.LIVE;
 
   readonly tournaments = signal<TournamentDto[]>([]);
   readonly raceDays = signal<RaceDayDto[]>([]);
@@ -280,7 +275,7 @@ export class LandingTimeEntryComponent implements OnInit, OnDestroy {
   private readonly currentTime = signal(Date.now());
   private clockTimer: ReturnType<typeof setInterval> | null = null;
 
-  autoSave = false;
+  autoSave = true;
 
   ngOnInit(): void {
     this.clockTimer = setInterval(() => this.currentTime.set(Date.now()), 1000);
@@ -340,10 +335,10 @@ export class LandingTimeEntryComponent implements OnInit, OnDestroy {
   canEnterTimes(): boolean {
     const sheet = this.entrySheet();
     if (!sheet) return false;
-    if (sheet.status !== RaceDayStatus.LIVE) return false;
+    if (!this.requireLiveRaceDay()) return true;
 
-    const startsAt = this.raceDayDateTime(sheet.raceDate, sheet.releaseTime);
-    const endsAt = this.raceDayDateTime(sheet.raceDate, sheet.endTime);
+    const startsAt = combineDateAndClockTime(sheet.raceDate, sheet.releaseTime);
+    const endsAt = combineDateAndClockTime(sheet.raceDate, sheet.endTime);
     const now = this.currentTime();
     return now >= startsAt.getTime() && now <= endsAt.getTime();
   }
@@ -380,6 +375,22 @@ export class LandingTimeEntryComponent implements OnInit, OnDestroy {
   cellFlightTime(cell: EntryCell): string | null {
     const seconds = this.flightSeconds(cell.landingTime);
     return seconds === null ? null : formatClockHms(seconds);
+  }
+
+  cellSubtotal(row: ParticipantEntryRow, cellIndex: number): string | null {
+    let totalSeconds = 0;
+    let hasFlight = false;
+
+    for (let index = 0; index <= cellIndex; index += 1) {
+      const cell = row.cells[index];
+      if (!cell) continue;
+      const seconds = this.flightSeconds(cell.landingTime);
+      if (seconds === null) continue;
+      totalSeconds += seconds;
+      hasFlight = true;
+    }
+
+    return hasFlight ? formatClockHms(totalSeconds) : null;
   }
 
   hasRowError(row: ParticipantEntryRow): boolean {
@@ -539,12 +550,6 @@ export class LandingTimeEntryComponent implements OnInit, OnDestroy {
       return `Time must be at or before ${sheet.endTime}`;
     }
     return null;
-  }
-
-  private raceDayDateTime(raceDate: string, time: string): Date {
-    const [year, month, day] = raceDate.split('-').map(Number);
-    const [hours, minutes, seconds = 0] = time.split(':').map(Number);
-    return new Date(year, month - 1, day, hours, minutes, seconds);
   }
 
   private saveCells(cellsToSave: EntryCell[], silent: boolean): void {

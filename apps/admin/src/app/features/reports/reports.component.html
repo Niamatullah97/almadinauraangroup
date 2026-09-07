@@ -86,7 +86,7 @@
 
       @if (resultScope() === resultScopes.PARTICIPANT) {
         <div class="form-field">
-          <label class="form-label" for="participant">Participant / Loft</label>
+          <label class="form-label" for="participant">Loft</label>
           <select
             id="participant"
             class="form-control"
@@ -94,10 +94,10 @@
             [ngModel]="selectedParticipantId()"
             (ngModelChange)="onParticipantChange($event)"
           >
-            <option value="">Select participant</option>
+            <option value="">Select loft</option>
             @for (registration of registrations(); track registration.id) {
               <option [value]="registration.participantId">
-                {{ registration.participant?.name }} · {{ registration.participant?.loftName }}
+                {{ registration.participant?.name }}
               </option>
             }
           </select>

@@ -3,8 +3,8 @@ import { Component, inject } from '@angular/core';
 import { TOURNAMENT_STATUS_LABELS } from '@kabootar/shared';
 
 import { OrganizerSessionService } from '../../core/services/organizer-session.service';
-import { TournamentService } from '../tournaments/tournament.service';
 import { RaceDaysTabComponent } from '../tournaments/race-days-tab.component';
+import { TournamentService } from '../tournaments/tournament.service';
 
 @Component({
   selector: 'app-organizer-preview',
@@ -33,7 +33,7 @@ import { RaceDaysTabComponent } from '../tournaments/race-days-tab.component';
 
           <div class="detail-grid">
             <div class="detail-item">
-              <span class="detail-label">Entry fee</span>
+              <span class="detail-label">Entry fee / participant</span>
               <strong>{{ formatCurrency(event.entryFee) }}</strong>
             </div>
             <div class="detail-item">

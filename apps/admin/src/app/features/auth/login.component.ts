@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -17,11 +18,18 @@ import { AuthService } from '../../core/services/auth.service';
         }
         <label>
           Email
-          <input type="email" formControlName="email" />
+          <input
+            type="email"
+            formControlName="email"
+            autocomplete="username"
+            autocapitalize="none"
+            autocorrect="off"
+            spellcheck="false"
+          />
         </label>
         <label>
           Password
-          <input type="password" formControlName="password" />
+          <input type="password" formControlName="password" autocomplete="current-password" />
         </label>
         <button type="submit" [disabled]="form.invalid || loading">
           {{ loading ? 'Signing in...' : 'Sign In' }}
@@ -100,24 +108,41 @@ export class LoginComponent {
     this.loading = true;
     this.error = '';
 
-    this.authService.login(this.form.getRawValue()).subscribe({
-      next: (res) => {
-        if (res.success && res.data && this.authService.isAuthenticated()) {
-          if (!this.authService.isSuperAdmin()) {
-            this.authService.logout(false);
-            this.error = 'Only Super Admin can access the admin dashboard.';
+    this.authService
+      .login({
+        email: this.form.controls.email.value.trim().toLowerCase(),
+        password: this.form.controls.password.value,
+      })
+      .subscribe({
+        next: (res) => {
+          if (res.success && res.data && this.authService.isAuthenticated()) {
+            if (!this.authService.isSuperAdmin()) {
+              this.authService.logout(false);
+              this.error = 'Only Super Admin can access the admin dashboard.';
+            } else {
+              this.router.navigate(['/dashboard']);
+            }
           } else {
-            this.router.navigate(['/dashboard']);
+            this.error = res.message || 'Login failed. Please try again.';
           }
-        } else {
-          this.error = res.message || 'Login failed. Please try again.';
-        }
-        this.loading = false;
-      },
-      error: () => {
-        this.error = 'Invalid credentials';
-        this.loading = false;
-      },
-    });
+          this.loading = false;
+        },
+        error: (err: HttpErrorResponse) => {
+          const apiMessage =
+            err.error && typeof err.error === 'object'
+              ? (err.error as { message?: unknown }).message
+              : undefined;
+          if (err.status === 0) {
+            this.error = 'Unable to reach the server. Please try again.';
+          } else if (err.status === 429) {
+            this.error = 'Too many login attempts. Please wait a minute and try again.';
+          } else if (typeof apiMessage === 'string' && apiMessage.trim()) {
+            this.error = apiMessage;
+          } else {
+            this.error = 'Invalid credentials';
+          }
+          this.loading = false;
+        },
+      });
   }
 }

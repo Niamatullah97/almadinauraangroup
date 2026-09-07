@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { Workbook, Row, Worksheet } from 'exceljs';
 import { PrizeDistributionRow } from '@kabootar/shared';
+import { Injectable } from '@nestjs/common';
+import { Row, Workbook, Worksheet } from 'exceljs';
 
 import { formatCurrency, formatDateLabel } from '../infrastructure/report-format';
 
@@ -49,11 +49,10 @@ export class ExcelGeneratorService {
       sheet.addRow([]);
 
       const headerRow = sheet.addRow([
-        'Participant',
-        'Father name',
+        'Loft',
+        'Ustaad name',
         'Phone',
         'City',
-        'Loft',
         'Pigeons',
         'Total fee',
         'Paid',
@@ -68,7 +67,6 @@ export class ExcelGeneratorService {
           row.fatherName,
           row.phone,
           row.city,
-          row.loftName,
           row.pigeonCount,
           row.totalFee,
           row.paidAmount,
@@ -77,8 +75,8 @@ export class ExcelGeneratorService {
         ]);
       });
 
+      sheet.getColumn(6).numFmt = '#,##0';
       sheet.getColumn(7).numFmt = '#,##0';
-      sheet.getColumn(8).numFmt = '#,##0';
       this.autoFitColumns(sheet);
     });
   }
@@ -91,21 +89,11 @@ export class ExcelGeneratorService {
     return this.createWorkbookBuffer('Payments', (sheet) => {
       sheet.addRow([tournamentTitle]);
       sheet.addRow(['Payment Report']);
-      sheet.addRow([
-        'Totals',
-        '',
-        '',
-        '',
-        '',
-        totals.totalFee,
-        totals.paidAmount,
-        totals.balance,
-      ]);
+      sheet.addRow(['Totals', '', '', '', '', totals.totalFee, totals.paidAmount, totals.balance]);
       sheet.addRow([]);
 
       const headerRow = sheet.addRow([
         'Receipt',
-        'Participant',
         'Loft',
         'Pigeons',
         'Total fee',
@@ -120,7 +108,6 @@ export class ExcelGeneratorService {
         sheet.addRow([
           row.receiptNumber,
           row.participantName,
-          row.loftName,
           row.pigeonCount,
           row.totalFee,
           row.paidAmount,
@@ -130,9 +117,9 @@ export class ExcelGeneratorService {
         ]);
       });
 
+      sheet.getColumn(4).numFmt = '#,##0';
       sheet.getColumn(5).numFmt = '#,##0';
       sheet.getColumn(6).numFmt = '#,##0';
-      sheet.getColumn(7).numFmt = '#,##0';
       this.autoFitColumns(sheet);
     });
   }
@@ -149,19 +136,12 @@ export class ExcelGeneratorService {
       sheet.addRow([`Race day: ${formatDateLabel(raceDate)} · Release ${releaseTime}`]);
       sheet.addRow([]);
 
-      const headerRow = sheet.addRow([
-        'Participant',
-        'Loft',
-        'Pigeon #',
-        'Ring #',
-        'Landing time',
-      ]);
+      const headerRow = sheet.addRow(['Loft', 'Pigeon #', 'Ring #', 'Landing time']);
       this.styleHeaderRow(headerRow);
 
       rows.forEach((row) => {
         sheet.addRow([
           row.participantName,
-          row.loftName,
           row.pigeonNumber,
           row.ringNumber,
           row.landingTime ?? '—',
@@ -183,20 +163,14 @@ export class ExcelGeneratorService {
       sheet.addRow([`Prize pool: ${formatCurrency(prizePool)}`]);
       sheet.addRow([]);
 
-      const headerRow = sheet.addRow(['Rank', 'Participant', 'Loft', 'Share %', 'Prize amount']);
+      const headerRow = sheet.addRow(['Rank', 'Loft', 'Share %', 'Prize amount']);
       this.styleHeaderRow(headerRow);
 
       rows.forEach((row) => {
-        sheet.addRow([
-          row.rank,
-          row.participantName,
-          row.loftName,
-          row.percentage,
-          row.prizeAmount,
-        ]);
+        sheet.addRow([row.rank, row.participantName, row.percentage, row.prizeAmount]);
       });
 
-      sheet.getColumn(5).numFmt = '#,##0';
+      sheet.getColumn(4).numFmt = '#,##0';
       this.autoFitColumns(sheet);
     });
   }

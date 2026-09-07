@@ -8,34 +8,32 @@ import {
 } from '@kabootar/shared';
 
 import { ConfirmationDialogComponent } from '../../shared/components/confirmation-dialog/confirmation-dialog.component';
+import { ParticipantService } from '../participants/participant.service';
 import {
   RegistrationFormSubmit,
   RegistrationModalComponent,
 } from '../registrations/registration-modal.component';
 import { RegistrationReceiptComponent } from '../registrations/registration-receipt.component';
 import { RegistrationService } from '../registrations/registration.service';
-import { ParticipantService } from '../participants/participant.service';
 
 @Component({
   selector: 'app-registrations-tab',
   standalone: true,
-  imports: [
-    ConfirmationDialogComponent,
-    RegistrationModalComponent,
-    RegistrationReceiptComponent,
-  ],
+  imports: [ConfirmationDialogComponent, RegistrationModalComponent, RegistrationReceiptComponent],
   template: `
     <section class="registrations-tab">
       <div class="page-toolbar">
         <div>
           <h3 class="registrations-tab__title">Registrations</h3>
           <p class="registrations-tab__subtitle">
-            Register participants for this tournament. Each participant is assigned
-            Pigeon 1 through the tournament pigeon count.
+            Register participants for this tournament. Each participant is assigned Pigeon 1 through
+            the tournament pigeon count.
           </p>
         </div>
         @if (canManage()) {
-          <button type="button" class="btn btn-primary" (click)="openCreateModal()">Add participant</button>
+          <button type="button" class="btn btn-primary" (click)="openCreateModal()">
+            Add participant
+          </button>
         }
       </div>
 
@@ -56,7 +54,6 @@ import { ParticipantService } from '../participants/participant.service';
           <table class="data-table">
             <thead>
               <tr>
-                <th>Participant</th>
                 <th>Loft</th>
                 <th>Status</th>
                 <th>Receipt</th>
@@ -73,7 +70,7 @@ import { ParticipantService } from '../participants/participant.service';
                       @if (profileUrl(registration); as imageUrl) {
                         <img
                           [src]="imageUrl"
-                          [alt]="registration.participant?.name ?? 'Participant'"
+                          [alt]="registration.participant?.name ?? 'Loft'"
                           class="participant-cell__avatar"
                           (error)="onPhotoError(registration.id)"
                         />
@@ -82,31 +79,51 @@ import { ParticipantService } from '../participants/participant.service';
                           class="participant-cell__avatar participant-cell__avatar--placeholder"
                           aria-hidden="true"
                         >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          >
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                             <circle cx="12" cy="7" r="4" />
                           </svg>
                         </span>
                       }
-                      <span class="participant-cell__name">{{ registration.participant?.name }}</span>
+                      <span class="participant-cell__name">{{
+                        registration.participant?.name
+                      }}</span>
                     </div>
                   </td>
-                  <td>{{ registration.participant?.loftName }}</td>
                   <td>
                     <span class="status-badge status-badge--active">Active</span>
                   </td>
                   <td>
-                    <button type="button" class="btn btn-secondary btn-sm" (click)="openReceipt(registration)">
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm"
+                      (click)="openReceipt(registration)"
+                    >
                       {{ registration.receiptNumber }}
                     </button>
                   </td>
                   @if (canManage()) {
                     <td>
                       <div class="row-actions">
-                        <button type="button" class="btn btn-secondary btn-sm" (click)="openEditModal(registration)">
+                        <button
+                          type="button"
+                          class="btn btn-secondary btn-sm"
+                          (click)="openEditModal(registration)"
+                        >
                           Edit
                         </button>
-                        <button type="button" class="btn btn-danger btn-sm" (click)="openDeleteDialog(registration)">
+                        <button
+                          type="button"
+                          class="btn btn-danger btn-sm"
+                          (click)="openDeleteDialog(registration)"
+                        >
                           Remove
                         </button>
                       </div>
@@ -253,7 +270,9 @@ export class RegistrationsTabComponent implements OnInit {
 
   openDeleteDialog(registration: TournamentRegistrationDetailDto): void {
     this.registrationToDelete = registration;
-    this.deleteMessage.set(`Remove ${registration.participant?.name ?? 'this participant'} from the tournament?`);
+    this.deleteMessage.set(
+      `Remove ${registration.participant?.name ?? 'this participant'} from the tournament?`,
+    );
     this.deleteDialogOpen.set(true);
   }
 
@@ -287,7 +306,9 @@ export class RegistrationsTabComponent implements OnInit {
     this.participantService.uploadProfile(participantId, file).subscribe({
       next: () => this.finishSave(),
       error: () => {
-        this.saveError.set('Participant saved, but profile upload failed. You can retry from Edit.');
+        this.saveError.set(
+          'Participant saved, but profile upload failed. You can retry from Edit.',
+        );
         this.saving.set(false);
       },
     });

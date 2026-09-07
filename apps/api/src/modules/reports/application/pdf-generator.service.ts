@@ -123,11 +123,10 @@ export class PdfGeneratorService {
           return;
         }
 
-        const headers = ['Rank', 'Participant', 'Loft', 'Share', 'Prize'];
+        const headers = ['Rank', 'Loft', 'Share', 'Prize'];
         const rows = input.distributions.map((row) => [
           String(row.rank),
           row.participantName,
-          row.loftName,
           `${row.percentage}%`,
           formatCurrency(row.prizeAmount),
         ]);
@@ -290,7 +289,7 @@ export class PdfGeneratorService {
 
     const columns: PdfTableColumn[] = [
       { header: 'Sr', width: srWidth, align: 'center' },
-      { header: 'Name', width: nameWidth },
+      { header: 'Loft', width: nameWidth },
       ...pigeonNumbers.map((number) => ({
         header: `Pigeon ${number}`,
         width: pigeonWidth,
@@ -347,7 +346,7 @@ export class PdfGeneratorService {
 
     const columns: PdfTableColumn[] = [
       { header: 'Sr', width: srWidth, align: 'center' },
-      { header: 'Name', width: nameWidth },
+      { header: 'Loft', width: nameWidth },
       { header: 'Pigeons', width: pigeonsWidth, align: 'center' },
       ...section.raceDates.map((raceDate) => ({
         header: raceDate,

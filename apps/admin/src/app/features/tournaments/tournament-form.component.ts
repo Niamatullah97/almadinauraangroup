@@ -1,12 +1,4 @@
-import {
-  Component,
-  effect,
-  inject,
-  input,
-  OnInit,
-  output,
-  signal,
-} from '@angular/core';
+import { Component, effect, inject, input, OnInit, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   CreateTournamentRequest,
@@ -66,7 +58,7 @@ export interface TournamentFormSubmit {
         </div>
 
         <div class="form-field">
-          <label class="form-label" for="entryFee">Entry fee (PKR)</label>
+          <label class="form-label" for="entryFee">Entry fee (PKR per participant)</label>
           <input
             id="entryFee"
             type="number"
@@ -91,7 +83,9 @@ export interface TournamentFormSubmit {
             formControlName="totalPigeonsAllowed"
             [class.is-invalid]="showError('totalPigeonsAllowed')"
           />
-          <p class="form-hint">Every registered participant is assigned Pigeon 1 through this number.</p>
+          <p class="form-hint">
+            Every registered participant is assigned Pigeon 1 through this number.
+          </p>
           @if (showError('totalPigeonsAllowed')) {
             <p class="form-error">At least one pigeon per participant is required.</p>
           }

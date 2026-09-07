@@ -22,6 +22,8 @@ describe('RaceDayModalComponent', () => {
     fixture.componentRef.setInput('open', true);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.modal')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.modal__form')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.form-row')).toBeTruthy();
   });
 
   it('should not submit invalid forms', () => {

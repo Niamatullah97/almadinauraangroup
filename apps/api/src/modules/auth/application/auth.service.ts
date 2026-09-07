@@ -56,7 +56,10 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const email = this.normalizeEmail(dto.email);
+    const existing = await this.prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
+    });
     if (existing) throw new ConflictException('Email already registered');
 
     const participantRole = await this.prisma.role.findUnique({
@@ -69,7 +72,7 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(dto.password, this.bcryptRounds);
     const user = await this.prisma.user.create({
       data: {
-        email: dto.email,
+        email,
         passwordHash,
         firstName: dto.firstName,
         lastName: dto.lastName,
@@ -83,8 +86,9 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
+    const email = this.normalizeEmail(dto.email);
+    const user = await this.prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
       select: USER_WITH_ROLE_SELECT,
     });
 
@@ -188,6 +192,10 @@ export class AuthService {
       role: user.role.slug as UserRole,
       permissions: this.extractPermissions(user),
     };
+  }
+
+  private normalizeEmail(email: string): string {
+    return email.trim().toLowerCase();
   }
 
   private parseRefreshExpiryDays(): number {

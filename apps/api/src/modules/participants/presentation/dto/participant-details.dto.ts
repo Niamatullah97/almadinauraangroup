@@ -1,5 +1,12 @@
-import { IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
+import { IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+
+function blankToNull(value: unknown): unknown {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  return trimmed === '' ? null : trimmed;
+}
 
 export class ParticipantDetailsDto {
   @ApiProperty({ example: 'Ahmed Khan' })
@@ -8,21 +15,27 @@ export class ParticipantDetailsDto {
   @MaxLength(150)
   name!: string;
 
-  @ApiProperty({ example: 'Muhammad Khan' })
+  @ApiPropertyOptional({ example: 'Muhammad Khan' })
+  @Transform(({ value }) => blankToNull(value))
+  @IsOptional()
   @IsString()
   @MinLength(2)
   @MaxLength(150)
-  fatherName!: string;
+  fatherName?: string | null;
 
-  @ApiProperty({ example: '+923001234567' })
+  @ApiPropertyOptional({ example: '+923001234567' })
+  @Transform(({ value }) => blankToNull(value))
+  @IsOptional()
   @IsString()
   @Matches(/^[+]?[\d\s-]{7,20}$/, { message: 'Phone number format is invalid' })
-  phone!: string;
+  phone?: string | null;
 
-  @ApiProperty({ example: 'Lahore' })
+  @ApiPropertyOptional({ example: 'Lahore' })
+  @Transform(({ value }) => blankToNull(value))
+  @IsOptional()
   @IsString()
   @MaxLength(120)
-  city!: string;
+  city?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -30,9 +43,10 @@ export class ParticipantDetailsDto {
   @MaxLength(1000)
   address?: string;
 
-  @ApiProperty({ example: 'Sky Loft' })
+  @ApiPropertyOptional({ example: 'Ahmed Khan' })
+  @IsOptional()
   @IsString()
   @MinLength(2)
   @MaxLength(150)
-  loftName!: string;
+  loftName?: string;
 }

@@ -1,16 +1,13 @@
+import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { DatePipe } from '@angular/common';
-import {
-  TOURNAMENT_STATUS_LABELS,
-  TournamentDetailDto,
-  TournamentStatus,
-} from '@kabootar/shared';
+import { TOURNAMENT_STATUS_LABELS, TournamentDetailDto, TournamentStatus } from '@kabootar/shared';
 
 import { ConfirmationDialogComponent } from '../../shared/components/confirmation-dialog/confirmation-dialog.component';
+
+import { OrganizerAccessTabComponent } from './organizer-access-tab.component';
 import { RaceDaysTabComponent } from './race-days-tab.component';
 import { RegistrationsTabComponent } from './registrations-tab.component';
-import { OrganizerAccessTabComponent } from './organizer-access-tab.component';
 import { TournamentService } from './tournament.service';
 
 type DetailTab = 'overview' | 'race-days' | 'registrations' | 'organizer-access';
@@ -18,7 +15,14 @@ type DetailTab = 'overview' | 'race-days' | 'registrations' | 'organizer-access'
 @Component({
   selector: 'app-tournament-detail',
   standalone: true,
-  imports: [RouterLink, DatePipe, ConfirmationDialogComponent, RaceDaysTabComponent, RegistrationsTabComponent, OrganizerAccessTabComponent],
+  imports: [
+    RouterLink,
+    DatePipe,
+    ConfirmationDialogComponent,
+    RaceDaysTabComponent,
+    RegistrationsTabComponent,
+    OrganizerAccessTabComponent,
+  ],
   template: `
     @if (loading()) {
       <p class="state-message">Loading tournament...</p>
@@ -29,8 +33,16 @@ type DetailTab = 'overview' | 'race-days' | 'registrations' | 'organizer-access'
         <div class="page-toolbar">
           <a routerLink="/tournaments" class="btn btn-secondary">Back to list</a>
           <div class="page-toolbar__actions">
-            <a [routerLink]="['/tournaments', tournament()!.id, 'edit']" class="btn btn-primary">Edit tournament</a>
-            <button type="button" class="btn btn-danger" (click)="openDeleteDialog(tournament()!.title)">Delete</button>
+            <a [routerLink]="['/tournaments', tournament()!.id, 'edit']" class="btn btn-primary"
+              >Edit tournament</a
+            >
+            <button
+              type="button"
+              class="btn btn-danger"
+              (click)="openDeleteDialog(tournament()!.title)"
+            >
+              Delete
+            </button>
           </div>
         </div>
 
@@ -91,7 +103,7 @@ type DetailTab = 'overview' | 'race-days' | 'registrations' | 'organizer-access'
 
             <div class="detail-grid">
               <div class="detail-item">
-                <span class="detail-label">Entry fee</span>
+                <span class="detail-label">Entry fee / participant</span>
                 <strong>{{ formatCurrency(tournament()!.entryFee) }}</strong>
               </div>
               <div class="detail-item">
@@ -126,7 +138,8 @@ type DetailTab = 'overview' | 'race-days' | 'registrations' | 'organizer-access'
 
             @if (tournament()!.creator) {
               <div class="detail-meta">
-                Created by {{ tournament()!.creator!.firstName }} {{ tournament()!.creator!.lastName }}
+                Created by {{ tournament()!.creator!.firstName }}
+                {{ tournament()!.creator!.lastName }}
               </div>
             }
           } @else if (activeTab() === 'race-days') {
@@ -149,7 +162,11 @@ type DetailTab = 'overview' | 'race-days' | 'registrations' | 'organizer-access'
       />
     }
   `,
-  styleUrls: ['./tournament-shared.scss', './tournament-detail.component.scss', './tournament-list.component.scss'],
+  styleUrls: [
+    './tournament-shared.scss',
+    './tournament-detail.component.scss',
+    './tournament-list.component.scss',
+  ],
 })
 export class TournamentDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);

@@ -1,6 +1,3 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { RaceWinnerCategory } from '@prisma/client';
-
 import {
   DailyResultDto,
   DoubleStampResultDto,
@@ -12,6 +9,9 @@ import {
   calculateTotalResults,
   toDailyPigeonInputs,
 } from '@kabootar/shared';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { RaceWinnerCategory } from '@prisma/client';
+
 import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
 
 const WINNER_CATEGORIES = [
@@ -206,7 +206,7 @@ export class ResultsService {
         registrationPigeonId: pigeon.id,
         participantId: pigeon.participantId,
         participantName: pigeon.participant.name,
-        loftName: pigeon.participant.loftName,
+        loftName: pigeon.participant.name,
         profileImage: pigeon.participant.profileImage,
         pigeonNumber: pigeon.pigeonNumber,
         ringNumber: pigeon.ringNumber,

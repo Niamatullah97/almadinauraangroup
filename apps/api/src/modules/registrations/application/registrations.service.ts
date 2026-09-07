@@ -1,4 +1,11 @@
 import {
+  buildQuotaPigeonNumbers,
+  calculateRegistrationTotalFee,
+  deriveRegistrationPaymentStatus,
+  generateBulkRingNumber,
+  generateReceiptNumber,
+} from '@kabootar/shared';
+import {
   BadRequestException,
   ConflictException,
   Injectable,
@@ -11,13 +18,6 @@ import {
   TournamentRegistration,
   TournamentStatus,
 } from '@prisma/client';
-import {
-  buildQuotaPigeonNumbers,
-  calculateRegistrationTotalFee,
-  deriveRegistrationPaymentStatus,
-  generateBulkRingNumber,
-  generateReceiptNumber,
-} from '@kabootar/shared';
 
 import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
 import { CreateRegistrationDto } from '../presentation/dto/create-registration.dto';
@@ -30,6 +30,11 @@ const MUTABLE_TOURNAMENT_STATUSES = new Set<TournamentStatus>([
   TournamentStatus.ACTIVE,
 ]);
 
+function optionalTrim(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
 type RegistrationWithRelations = TournamentRegistration & {
   tournament?: {
     id: string;
@@ -41,9 +46,9 @@ type RegistrationWithRelations = TournamentRegistration & {
     id: string;
     tournamentId: string;
     name: string;
-    fatherName: string;
-    phone: string;
-    city: string;
+    fatherName: string | null;
+    phone: string | null;
+    city: string | null;
     address: string | null;
     loftName: string;
     profileImage: string | null;
@@ -107,11 +112,7 @@ export class RegistrationsService {
     return this.mapRegistrationDetail(registration);
   }
 
-  async previewFee(
-    tournamentId: string,
-    pigeonCount: number,
-    excludeRegistrationId?: string,
-  ) {
+  async previewFee(tournamentId: string, pigeonCount: number, excludeRegistrationId?: string) {
     void excludeRegistrationId;
     const tournament = await this.ensureTournamentExists(tournamentId);
     await this.assertPigeonLimit(tournamentId, pigeonCount);
@@ -143,11 +144,11 @@ export class RegistrationsService {
           data: {
             tournamentId: dto.tournamentId,
             name: dto.participant.name.trim(),
-            fatherName: dto.participant.fatherName.trim(),
-            phone: dto.participant.phone.trim(),
-            city: dto.participant.city.trim(),
+            fatherName: optionalTrim(dto.participant.fatherName),
+            phone: optionalTrim(dto.participant.phone),
+            city: optionalTrim(dto.participant.city),
             address: dto.participant.address?.trim(),
-            loftName: dto.participant.loftName.trim(),
+            loftName: dto.participant.name.trim(),
           },
         });
 
@@ -214,11 +215,11 @@ export class RegistrationsService {
       where: { id: existing.participantId },
       data: {
         name: dto.participant.name.trim(),
-        fatherName: dto.participant.fatherName.trim(),
-        phone: dto.participant.phone.trim(),
-        city: dto.participant.city.trim(),
+        fatherName: optionalTrim(dto.participant.fatherName),
+        phone: optionalTrim(dto.participant.phone),
+        city: optionalTrim(dto.participant.city),
         address: dto.participant.address?.trim() || null,
-        loftName: dto.participant.loftName.trim(),
+        loftName: dto.participant.name.trim(),
       },
     });
 
@@ -326,13 +327,18 @@ export class RegistrationsService {
 
   private async assertUniquePhoneInTournament(
     tournamentId: string,
-    phone: string,
+    phone: string | null | undefined,
     excludeParticipantId?: string,
   ) {
+    const normalized = optionalTrim(phone);
+    if (!normalized) {
+      return;
+    }
+
     const existing = await this.prisma.participant.findFirst({
       where: {
         tournamentId,
-        phone: phone.trim(),
+        phone: normalized,
         deletedAt: null,
         ...(excludeParticipantId && { NOT: { id: excludeParticipantId } }),
       },
@@ -409,19 +415,14 @@ export class RegistrationsService {
   }
 
   private handleUniqueViolation(error: unknown): void {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2002'
-    ) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       throw new ConflictException(
         'A participant with this phone number is already registered in this tournament',
       );
     }
   }
 
-  private toPrismaPaymentStatus(
-    status: 'PENDING' | 'PARTIAL' | 'PAID',
-  ): RegistrationPaymentStatus {
+  private toPrismaPaymentStatus(status: 'PENDING' | 'PARTIAL' | 'PAID'): RegistrationPaymentStatus {
     return status as RegistrationPaymentStatus;
   }
 

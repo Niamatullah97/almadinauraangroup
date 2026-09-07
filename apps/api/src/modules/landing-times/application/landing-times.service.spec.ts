@@ -113,10 +113,11 @@ describe('LandingTimesService', () => {
     expect(result.doubleStampEnabled).toBe(false);
   });
 
-  it('rejects landing time entry for pending race day', async () => {
+  it('allows landing time entry for a pending race day', async () => {
     prisma.raceDay.findFirst.mockResolvedValue({ ...raceDay, status: RaceDayStatus.PENDING });
     prisma.registrationPigeon.findFirst.mockResolvedValue({ id: 'pigeon-1' });
     prisma.pigeonLandingTime.findFirst.mockResolvedValue(null);
+    prisma.pigeonLandingTime.create.mockResolvedValue(landingTime);
 
     await expect(
       service.create('tournament-1', 'race-day-1', {
@@ -124,7 +125,7 @@ describe('LandingTimesService', () => {
         registrationPigeonId: 'pigeon-1',
         landingTime: '14:35:22',
       }),
-    ).rejects.toThrow(BadRequestException);
+    ).resolves.toMatchObject({ id: 'landing-1' });
   });
 
   it('rejects a landing time before the race-day start', async () => {
@@ -155,15 +156,20 @@ describe('LandingTimesService', () => {
     ).rejects.toThrow('Landing time cannot be after the race day end time');
   });
 
-  it('rejects edits after the race-day end', async () => {
+  it('allows superadmin to edit after the race-day end', async () => {
     jest.setSystemTime(new Date('2026-04-01T13:00:01.000Z'));
     prisma.raceDay.findFirst.mockResolvedValue(raceDay);
+    prisma.pigeonLandingTime.findFirst.mockResolvedValue(landingTime);
+    prisma.pigeonLandingTime.update.mockResolvedValue({
+      ...landingTime,
+      landingTime: new Date('2026-04-01T12:00:00+05:00'),
+    });
 
     await expect(
       service.update('tournament-1', 'race-day-1', 'landing-1', {
         landingTime: '17:00:00',
       }),
-    ).rejects.toThrow('Landing times cannot be edited after the race day ends');
+    ).resolves.toMatchObject({ id: 'landing-1' });
   });
 
   it('rejects duplicate landing entry', async () => {
@@ -247,7 +253,8 @@ describe('LandingTimesService', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
-  it('rejects organizer landing time entry when the race day is not live', async () => {
+  it('rejects organizer landing time entry after the race day ends', async () => {
+    jest.setSystemTime(new Date('2026-04-01T13:00:01.000Z'));
     prisma.raceDay.findFirst.mockResolvedValue({ ...raceDay, status: RaceDayStatus.COMPLETED });
     prisma.registrationPigeon.findFirst.mockResolvedValue({ id: 'pigeon-1' });
 
@@ -269,6 +276,6 @@ describe('LandingTimesService', () => {
           tournamentId: 'tournament-1',
         },
       ),
-    ).rejects.toThrow(BadRequestException);
+    ).rejects.toThrow('Landing times cannot be edited after the race day ends');
   });
 });

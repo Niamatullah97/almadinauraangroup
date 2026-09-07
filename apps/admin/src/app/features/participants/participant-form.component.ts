@@ -1,11 +1,4 @@
-import {
-  Component,
-  effect,
-  inject,
-  input,
-  output,
-  signal,
-} from '@angular/core';
+import { Component, effect, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   ParticipantDto,
@@ -47,7 +40,7 @@ export interface ParticipantFormSubmit {
         </div>
 
         <div class="form-field">
-          <label class="form-label" for="name">Name</label>
+          <label class="form-label" for="name">Loft name</label>
           <input
             id="name"
             type="text"
@@ -56,12 +49,12 @@ export interface ParticipantFormSubmit {
             [class.is-invalid]="showError('name')"
           />
           @if (showError('name')) {
-            <p class="form-error">Name is required.</p>
+            <p class="form-error">Loft name is required.</p>
           }
         </div>
 
         <div class="form-field">
-          <label class="form-label" for="fatherName">Father name</label>
+          <label class="form-label" for="fatherName">Ustaad name</label>
           <input
             id="fatherName"
             type="text"
@@ -70,7 +63,7 @@ export interface ParticipantFormSubmit {
             [class.is-invalid]="showError('fatherName')"
           />
           @if (showError('fatherName')) {
-            <p class="form-error">Father name is required.</p>
+            <p class="form-error">Ustaad name must be at least 2 characters.</p>
           }
         </div>
 
@@ -99,21 +92,7 @@ export interface ParticipantFormSubmit {
             [class.is-invalid]="showError('city')"
           />
           @if (showError('city')) {
-            <p class="form-error">City is required.</p>
-          }
-        </div>
-
-        <div class="form-field">
-          <label class="form-label" for="loftName">Loft name</label>
-          <input
-            id="loftName"
-            type="text"
-            class="form-control"
-            formControlName="loftName"
-            [class.is-invalid]="showError('loftName')"
-          />
-          @if (showError('loftName')) {
-            <p class="form-error">Loft name is required.</p>
+            <p class="form-error">City must be 120 characters or fewer.</p>
           }
         </div>
 
@@ -156,11 +135,10 @@ export class ParticipantFormComponent {
 
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(150)]],
-    fatherName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(150)]],
-    phone: ['', [Validators.required, Validators.pattern(/^[+]?[\d\s-]{7,20}$/)]],
-    city: ['', [Validators.required, Validators.maxLength(120)]],
+    fatherName: ['', [Validators.minLength(2), Validators.maxLength(150)]],
+    phone: ['', [Validators.pattern(/^[+]?[\d\s-]{7,20}$/)]],
+    city: ['', [Validators.maxLength(120)]],
     address: [''],
-    loftName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(150)]],
   });
 
   constructor() {
@@ -173,11 +151,10 @@ export class ParticipantFormComponent {
 
       this.form.patchValue({
         name: value.name,
-        fatherName: value.fatherName,
-        phone: value.phone,
-        city: value.city,
+        fatherName: value.fatherName ?? '',
+        phone: value.phone ?? '',
+        city: value.city ?? '',
         address: value.address ?? '',
-        loftName: value.loftName,
       });
 
       this.initials.set(this.participantService.getInitials(value.name));
@@ -231,6 +208,7 @@ export class ParticipantFormComponent {
     this.submitted.emit({
       payload: {
         ...raw,
+        loftName: raw.name,
         address: raw.address || undefined,
       },
       profileFile: this.selectedProfile,

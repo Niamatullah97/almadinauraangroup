@@ -44,9 +44,9 @@ export interface TournamentRegistrationDetailDto extends TournamentRegistrationD
     id: string;
     tournamentId: string;
     name: string;
-    fatherName: string;
-    phone: string;
-    city: string;
+    fatherName: string | null;
+    phone: string | null;
+    city: string | null;
     address: string | null;
     loftName: string;
     profileImage: string | null;
@@ -56,11 +56,11 @@ export interface TournamentRegistrationDetailDto extends TournamentRegistrationD
 
 export interface RegistrationParticipantInput {
   name: string;
-  fatherName: string;
-  phone: string;
-  city: string;
+  fatherName?: string | null;
+  phone?: string | null;
+  city?: string | null;
   address?: string;
-  loftName: string;
+  loftName?: string;
 }
 
 export interface CreateRegistrationRequest {

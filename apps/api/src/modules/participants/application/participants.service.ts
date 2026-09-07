@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Participant, Prisma } from '@prisma/client';
 
 import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
@@ -12,6 +8,11 @@ import { ParticipantQueryDto } from '../presentation/dto/participant-query.dto';
 import { UpdateParticipantDto } from '../presentation/dto/update-participant.dto';
 
 const SORTABLE_FIELDS = new Set(['name', 'city', 'loftName', 'createdAt']);
+
+function optionalTrim(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
 
 @Injectable()
 export class ParticipantsService {
@@ -83,11 +84,11 @@ export class ParticipantsService {
         data: {
           tournamentId: dto.tournamentId,
           name: dto.name.trim(),
-          fatherName: dto.fatherName.trim(),
-          phone: dto.phone.trim(),
-          city: dto.city.trim(),
+          fatherName: optionalTrim(dto.fatherName),
+          phone: optionalTrim(dto.phone),
+          city: optionalTrim(dto.city),
           address: dto.address?.trim(),
-          loftName: dto.loftName.trim(),
+          loftName: dto.name.trim(),
         },
       });
 
@@ -101,8 +102,9 @@ export class ParticipantsService {
   async update(id: string, dto: UpdateParticipantDto) {
     const existing = await this.findOne(id);
 
-    if (dto.phone && dto.phone.trim() !== existing.phone) {
-      await this.assertUniquePhone(existing.tournamentId, dto.phone.trim(), id);
+    const nextPhone = dto.phone !== undefined ? optionalTrim(dto.phone) : existing.phone;
+    if (nextPhone && nextPhone !== existing.phone) {
+      await this.assertUniquePhone(existing.tournamentId, nextPhone, id);
     }
 
     try {
@@ -110,11 +112,11 @@ export class ParticipantsService {
         where: { id },
         data: {
           ...(dto.name !== undefined && { name: dto.name.trim() }),
-          ...(dto.fatherName !== undefined && { fatherName: dto.fatherName.trim() }),
-          ...(dto.phone !== undefined && { phone: dto.phone.trim() }),
-          ...(dto.city !== undefined && { city: dto.city.trim() }),
+          ...(dto.fatherName !== undefined && { fatherName: optionalTrim(dto.fatherName) }),
+          ...(dto.phone !== undefined && { phone: optionalTrim(dto.phone) }),
+          ...(dto.city !== undefined && { city: optionalTrim(dto.city) }),
           ...(dto.address !== undefined && { address: dto.address.trim() || null }),
-          ...(dto.loftName !== undefined && { loftName: dto.loftName.trim() }),
+          ...(dto.name !== undefined && { loftName: dto.name.trim() }),
         },
       });
 
@@ -160,14 +162,23 @@ export class ParticipantsService {
       orderBy: { city: 'asc' },
     });
 
-    return rows.map((row) => row.city);
+    return rows.map((row) => row.city).filter((city): city is string => Boolean(city));
   }
 
-  private async assertUniquePhone(tournamentId: string, phone: string, excludeId?: string) {
+  private async assertUniquePhone(
+    tournamentId: string,
+    phone: string | null | undefined,
+    excludeId?: string,
+  ) {
+    const normalized = optionalTrim(phone);
+    if (!normalized) {
+      return;
+    }
+
     const existing = await this.prisma.participant.findFirst({
       where: {
         tournamentId,
-        phone,
+        phone: normalized,
         deletedAt: null,
         ...(excludeId && { NOT: { id: excludeId } }),
       },
@@ -181,10 +192,7 @@ export class ParticipantsService {
   }
 
   private handleUniqueViolation(error: unknown): void {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2002'
-    ) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       throw new ConflictException(
         'A participant with this phone number is already registered in this tournament',
       );

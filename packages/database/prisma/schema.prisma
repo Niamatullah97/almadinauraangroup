@@ -260,9 +260,9 @@ model Participant {
   id           String    @id @default(uuid()) @db.Uuid
   tournamentId String    @map("tournament_id") @db.Uuid
   name         String    @db.VarChar(150)
-  fatherName   String    @map("father_name") @db.VarChar(150)
-  phone        String    @db.VarChar(20)
-  city         String    @db.VarChar(120)
+  fatherName   String?   @map("father_name") @db.VarChar(150)
+  phone        String?   @db.VarChar(20)
+  city         String?   @db.VarChar(120)
   address      String?   @db.Text
   loftName     String    @map("loft_name") @db.VarChar(150)
   profileImage String?   @map("profile_image") @db.VarChar(500)

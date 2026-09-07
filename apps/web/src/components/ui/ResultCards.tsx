@@ -67,7 +67,14 @@ export function WinnerCard({ title, winner }: WinnerCardProps) {
       <div className="winner-card__body">
         <div className="winner-card__label">{title}</div>
         <div className="winner-card__name">{winner.participantName}</div>
-        <div className="winner-card__value">{formatWinnerValue(winner)}</div>
+        <div className="winner-card__value">
+          {winner.category === 'average'
+            ? formatWinnerValue(winner)
+            : `Landed ${formatWinnerValue(winner)}`}
+        </div>
+        {winner.category === 'average' && winner.landingClockTime && (
+          <div className="winner-card__meta">Landed {winner.landingClockTime}</div>
+        )}
       </div>
     </div>
   );
@@ -76,6 +83,7 @@ export function WinnerCard({ title, winner }: WinnerCardProps) {
 interface RankingTableProps {
   rows: ParticipantResultRow[];
   compactPigeonColumns?: boolean;
+  doubleStampView?: boolean;
 }
 
 function pigeonColumnCount(rows: ParticipantResultRow[]): number {
@@ -95,7 +103,15 @@ function pigeonForColumn(
   return row.pigeons.find((pigeon) => pigeon.pigeonNumber === pigeonNumber);
 }
 
-export function RankingTable({ rows, compactPigeonColumns = false }: RankingTableProps) {
+function doubleStampPigeon(row: ParticipantResultRow): ResultPigeonRow | undefined {
+  return row.pigeons.find((pigeon) => pigeon.isDoubleStamp) ?? row.pigeons[0];
+}
+
+export function RankingTable({
+  rows,
+  compactPigeonColumns = false,
+  doubleStampView = false,
+}: RankingTableProps) {
   if (rows.length === 0) {
     return <div className="empty-state">No rankings available yet.</div>;
   }
@@ -114,11 +130,13 @@ export function RankingTable({ rows, compactPigeonColumns = false }: RankingTabl
           <tr>
             <th>Sr</th>
             <th>Picture</th>
-            <th>Name</th>
-            {pigeonNumbers.map((number) => (
-              <th key={number}>Pigeon {number}</th>
-            ))}
-            <th>Total</th>
+            <th>Loft</th>
+            {doubleStampView ? (
+              <th>Pigeon</th>
+            ) : (
+              pigeonNumbers.map((number) => <th key={number}>Pigeon {number}</th>)
+            )}
+            {!doubleStampView && <th>Total</th>}
           </tr>
         </thead>
         <tbody>
@@ -139,35 +157,44 @@ export function RankingTable({ rows, compactPigeonColumns = false }: RankingTabl
                 </td>
                 <td>
                   <div className="timetable-name">{row.participantName}</div>
-                  <div className="timetable-loft">{row.loftName}</div>
-                  {row.currentFlyingTimeMs !== null && row.remainingPigeons > 0 && (
-                    <div className="timetable-flying">
-                      Flying time {formatClockDuration(row.currentFlyingTimeMs, false)}
-                    </div>
-                  )}
+                  {!doubleStampView &&
+                    row.currentFlyingTimeMs !== null &&
+                    row.remainingPigeons > 0 && (
+                      <div className="timetable-flying">
+                        Flying time {formatClockDuration(row.currentFlyingTimeMs, false)}
+                      </div>
+                    )}
                 </td>
-                {pigeonNumbers.map((number) => {
-                  const pigeon = pigeonForColumn(row, number);
-                  return (
-                    <td key={number} className="timetable-time">
-                      {pigeon?.landingClockTime ?? ''}
-                      {pigeon?.landingTimeMs !== null && pigeon?.landingTimeMs !== undefined && (
-                        <span className="timetable-cumulative">
-                          {formatClockDuration(pigeon.landingTimeMs)}
-                        </span>
-                      )}
-                      {pigeon?.isDoubleStamp && pigeon.landingClockTime && (
-                        <span className="double-stamp-badge">Double stamp</span>
-                      )}
-                      {pigeon?.isBrave && pigeon.landingClockTime && (
-                        <span className="bravery-badge">Bravery</span>
-                      )}
-                    </td>
-                  );
-                })}
-                <td className="timetable-total">
-                  {formatClockDuration(row.landedPigeons > 0 ? row.totalLandingTimeMs : 0)}
-                </td>
+                {doubleStampView ? (
+                  <td className="timetable-time">
+                    {doubleStampPigeon(row)?.landingClockTime ?? ''}
+                  </td>
+                ) : (
+                  pigeonNumbers.map((number) => {
+                    const pigeon = pigeonForColumn(row, number);
+                    return (
+                      <td key={number} className="timetable-time">
+                        {pigeon?.landingClockTime ?? ''}
+                        {pigeon?.landingTimeMs !== null && pigeon?.landingTimeMs !== undefined && (
+                          <span className="timetable-cumulative">
+                            {formatClockDuration(pigeon.landingTimeMs)}
+                          </span>
+                        )}
+                        {pigeon?.isDoubleStamp && pigeon.landingClockTime && (
+                          <span className="double-stamp-badge">Double stamp</span>
+                        )}
+                        {pigeon?.isBrave && pigeon.landingClockTime && (
+                          <span className="bravery-badge">Bravery</span>
+                        )}
+                      </td>
+                    );
+                  })
+                )}
+                {!doubleStampView && (
+                  <td className="timetable-total">
+                    {formatClockDuration(row.landedPigeons > 0 ? row.totalLandingTimeMs : 0)}
+                  </td>
+                )}
               </tr>
             );
           })}
@@ -198,7 +225,7 @@ export function TournamentTotalTable({ rows, raceDays }: TournamentTotalTablePro
           <tr>
             <th>Sr</th>
             <th>Picture</th>
-            <th>Name</th>
+            <th>Loft</th>
             <th>Pigeons</th>
             {raceDays.map((raceDay) => (
               <th key={raceDay.id}>{raceDay.label}</th>
@@ -239,7 +266,6 @@ export function TournamentTotalTable({ rows, raceDays }: TournamentTotalTablePro
                 </td>
                 <td>
                   <div className="timetable-name">{row.participantName}</div>
-                  <div className="timetable-loft">{row.loftName}</div>
                 </td>
                 <td className="timetable-time">{landedAcrossRaceDays}</td>
                 {dailyRows.map((dailyRow, raceDayIndex) => (

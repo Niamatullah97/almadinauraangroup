@@ -416,9 +416,10 @@ export function findFirstWinner(
 }
 
 /**
- * Last winner is calculated after the race ends. Only lofts that landed the
- * full tournament pigeon quota before race end are eligible. Among those,
- * the loft whose last (Nth) pigeon landed closest to race end wins.
+ * Last winner is calculated after the race ends. Every loft that landed at
+ * least one pigeon before race end is eligible. Among those, the loft whose
+ * last landed pigeon landed closest to race end wins — even if that loft has
+ * fewer pigeons than others.
  */
 export function findLastWinner(
   pigeons: ResultPigeonLandingInput[],
@@ -439,11 +440,6 @@ export function findLastWinner(
   let winnerLandingMs = -1;
 
   for (const participantPigeons of grouped.values()) {
-    const requiredCount = options.totalPigeonsAllowed ?? participantPigeons.length;
-    if (requiredCount <= 0) {
-      continue;
-    }
-
     const landed = participantPigeons
       .filter(
         (pigeon): pigeon is ResultPigeonLandingInput & { landingTime: Date } =>
@@ -451,11 +447,11 @@ export function findLastWinner(
       )
       .sort(compareLandingTimes);
 
-    if (landed.length < requiredCount) {
+    if (landed.length === 0) {
       continue;
     }
 
-    const lastPigeon = landed[requiredCount - 1];
+    const lastPigeon = landed[landed.length - 1];
     if (lastPigeon.landingTime.getTime() > options.raceEnd.getTime()) {
       continue;
     }
@@ -493,13 +489,22 @@ export function findAverageWinner(
   });
 
   const winner = sorted[0];
+  const lastLanded = [...winner.pigeons]
+    .filter((pigeon) => pigeon.landingClockTime)
+    .sort((left, right) => left.pigeonNumber - right.pigeonNumber)
+    .at(-1);
+
   return {
     participantId: winner.participantId,
     participantName: winner.participantName,
     loftName: winner.loftName,
     profileImage: winner.profileImage ?? null,
+    registrationPigeonId: lastLanded?.registrationPigeonId,
+    pigeonNumber: lastLanded?.pigeonNumber,
+    ringNumber: lastLanded?.ringNumber,
     valueMs: winner.totalLandingTimeMs,
-    landingClockTime: formatClockDuration(winner.totalLandingTimeMs),
+    landingClockTime:
+      lastLanded?.landingClockTime ?? formatClockDuration(winner.totalLandingTimeMs),
     category: 'average',
   };
 }

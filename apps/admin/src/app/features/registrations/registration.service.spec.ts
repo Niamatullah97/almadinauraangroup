@@ -1,8 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 
-import { RegistrationService } from './registration.service';
 import { ApiService } from '../../core/services/api.service';
+
+import { RegistrationService } from './registration.service';
 
 describe('RegistrationService', () => {
   let service: RegistrationService;
@@ -40,14 +41,14 @@ describe('RegistrationService', () => {
         data: {
           entryFeePerPigeon: 500,
           pigeonCount: 3,
-          totalFee: 1500,
+          totalFee: 500,
           remainingPigeonSlots: 7,
         },
       }),
     );
 
     service.previewFee('tournament-1', 3).subscribe((preview) => {
-      expect(preview.totalFee).toBe(1500);
+      expect(preview.totalFee).toBe(500);
       done();
     });
   });

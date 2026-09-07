@@ -1,8 +1,8 @@
 export function calculateRegistrationTotalFee(
-  entryFeePerPigeon: number,
-  pigeonCount: number,
+  entryFeePerParticipant: number,
+  _pigeonCount?: number,
 ): number {
-  return Number((entryFeePerPigeon * pigeonCount).toFixed(2));
+  return Number(entryFeePerParticipant.toFixed(2));
 }
 
 export function deriveRegistrationPaymentStatus(

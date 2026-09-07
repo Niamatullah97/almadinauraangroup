@@ -13,6 +13,8 @@ interface ResultPageContentProps {
   averageWinner: ResultWinner | null;
   rankings: ParticipantResultRow[];
   compactPigeonColumns?: boolean;
+  doubleStampView?: boolean;
+  showWinners?: boolean;
   rankingsContent?: ReactNode;
 }
 
@@ -26,6 +28,8 @@ export function ResultPageContent({
   averageWinner,
   rankings,
   compactPigeonColumns = false,
+  doubleStampView = false,
+  showWinners = true,
   rankingsContent,
 }: ResultPageContentProps) {
   return (
@@ -37,16 +41,24 @@ export function ResultPageContent({
 
       <ResultSummary summary={summary} loftsCount={loftsCount} />
 
-      <h2 className="section-title">Winners</h2>
-      <div className="winners-grid">
-        <WinnerCard title="First Winner" winner={firstWinner} />
-        <WinnerCard title="Last Winner" winner={lastWinner} />
-        <WinnerCard title="Average Winner" winner={averageWinner} />
-      </div>
+      {showWinners && (
+        <>
+          <h2 className="section-title">Winners</h2>
+          <div className="winners-grid">
+            <WinnerCard title="First Winner" winner={firstWinner} />
+            <WinnerCard title="Last Winner" winner={lastWinner} />
+            <WinnerCard title="Average Winner" winner={averageWinner} />
+          </div>
+        </>
+      )}
 
       <h2 className="section-title">Rankings</h2>
       {rankingsContent ?? (
-        <RankingTable rows={rankings} compactPigeonColumns={compactPigeonColumns} />
+        <RankingTable
+          rows={rankings}
+          compactPigeonColumns={compactPigeonColumns}
+          doubleStampView={doubleStampView}
+        />
       )}
     </>
   );
