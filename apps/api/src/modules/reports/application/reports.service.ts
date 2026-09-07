@@ -5,6 +5,8 @@ import {
   ReportResultScope,
   TotalResultDto,
   calculatePrizeDistribution,
+  calculateRegistrationTotalFee,
+  collectedRegistrationFee,
 } from '@kabootar/shared';
 import { BadRequestException, Injectable, NotFoundException, StreamableFile } from '@nestjs/common';
 
@@ -164,8 +166,11 @@ export class ReportsService {
       city: registration.participant.city ?? '',
       loftName: registration.participant.loftName,
       pigeonCount: registration.pigeonCount,
-      totalFee: Number(registration.totalFee),
-      paidAmount: Number(registration.paidAmount),
+      totalFee: calculateRegistrationTotalFee(Number(registration.entryFeePerPigeon)),
+      paidAmount: collectedRegistrationFee(
+        Number(registration.entryFeePerPigeon),
+        Number(registration.paidAmount),
+      ),
       paymentStatus:
         REGISTRATION_PAYMENT_STATUS_LABELS[registration.paymentStatus] ??
         registration.paymentStatus,
@@ -181,8 +186,11 @@ export class ReportsService {
     const registrations = await this.getRegistrationsForReport(tournamentId);
 
     const rows = registrations.map((registration) => {
-      const totalFee = Number(registration.totalFee);
-      const paidAmount = Number(registration.paidAmount);
+      const totalFee = calculateRegistrationTotalFee(Number(registration.entryFeePerPigeon));
+      const paidAmount = collectedRegistrationFee(
+        Number(registration.entryFeePerPigeon),
+        Number(registration.paidAmount),
+      );
       const lastPayment = registration.payments[0];
 
       return {
@@ -226,7 +234,12 @@ export class ReportsService {
     ]);
 
     const prizePool = registrations.reduce(
-      (sum, registration) => sum + Number(registration.paidAmount),
+      (sum, registration) =>
+        sum +
+        collectedRegistrationFee(
+          Number(registration.entryFeePerPigeon),
+          Number(registration.paidAmount),
+        ),
       0,
     );
 

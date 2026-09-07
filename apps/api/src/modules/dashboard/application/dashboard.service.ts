@@ -1,3 +1,4 @@
+import { calculateRegistrationTotalFee, collectedRegistrationFee } from '@kabootar/shared';
 import { Injectable } from '@nestjs/common';
 import { TournamentStatus } from '@prisma/client';
 
@@ -17,36 +18,41 @@ export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getStats(): Promise<DashboardStatsDto> {
-    const [
-      totalTournaments,
-      activeTournaments,
-      totalParticipants,
-      totalPigeons,
-      feeTotals,
-    ] = await Promise.all([
-      this.prisma.tournament.count({ where: { deletedAt: null } }),
-      this.prisma.tournament.count({
-        where: { deletedAt: null, status: TournamentStatus.ACTIVE },
-      }),
-      this.prisma.participant.count({
-        where: { deletedAt: null, tournament: { deletedAt: null } },
-      }),
-      this.prisma.registrationPigeon.count({
-        where: { deletedAt: null, tournament: { deletedAt: null } },
-      }),
-      this.prisma.tournamentRegistration.aggregate({
-        where: { deletedAt: null, tournament: { deletedAt: null } },
-        _sum: { totalFee: true, paidAmount: true },
-      }),
-    ]);
+    const [totalTournaments, activeTournaments, totalParticipants, totalPigeons, registrations] =
+      await Promise.all([
+        this.prisma.tournament.count({ where: { deletedAt: null } }),
+        this.prisma.tournament.count({
+          where: { deletedAt: null, status: TournamentStatus.ACTIVE },
+        }),
+        this.prisma.participant.count({
+          where: { deletedAt: null, tournament: { deletedAt: null } },
+        }),
+        this.prisma.registrationPigeon.count({
+          where: { deletedAt: null, tournament: { deletedAt: null } },
+        }),
+        this.prisma.tournamentRegistration.findMany({
+          where: { deletedAt: null, tournament: { deletedAt: null } },
+          select: { entryFeePerPigeon: true, paidAmount: true },
+        }),
+      ]);
+
+    const totalEntryFees = registrations.reduce(
+      (sum, row) => sum + calculateRegistrationTotalFee(Number(row.entryFeePerPigeon)),
+      0,
+    );
+    const totalPrizePool = registrations.reduce(
+      (sum, row) =>
+        sum + collectedRegistrationFee(Number(row.entryFeePerPigeon), Number(row.paidAmount)),
+      0,
+    );
 
     return {
       totalTournaments,
       activeTournaments,
       totalParticipants,
       totalPigeons,
-      totalEntryFees: Number(feeTotals._sum.totalFee ?? 0),
-      totalPrizePool: Number(feeTotals._sum.paidAmount ?? 0),
+      totalEntryFees,
+      totalPrizePool,
     };
   }
 }

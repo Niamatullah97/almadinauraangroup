@@ -256,6 +256,7 @@ describe('ReportsService', () => {
     prisma.tournamentRegistration.findMany.mockResolvedValue([
       {
         pigeonCount: 5,
+        entryFeePerPigeon: 5000,
         totalFee: 5000,
         paidAmount: 5000,
         paymentStatus: 'PAID',
@@ -327,6 +328,7 @@ describe('ReportsService', () => {
       {
         receiptNumber: 'RCPT-1',
         pigeonCount: 5,
+        entryFeePerPigeon: 5000,
         totalFee: 5000,
         paidAmount: 2500,
         paymentStatus: 'PARTIAL',
@@ -347,7 +349,9 @@ describe('ReportsService', () => {
       title: 'Spring Cup',
       city: 'Lahore',
     });
-    prisma.tournamentRegistration.findMany.mockResolvedValue([{ paidAmount: 100000 }]);
+    prisma.tournamentRegistration.findMany.mockResolvedValue([
+      { entryFeePerPigeon: 100000, paidAmount: 100000 },
+    ]);
     resultsService.getTotalResults.mockResolvedValue({
       rankings: [
         {

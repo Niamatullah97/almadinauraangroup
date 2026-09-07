@@ -1,6 +1,7 @@
 import {
   buildQuotaPigeonNumbers,
   calculateRegistrationTotalFee,
+  collectedRegistrationFee,
   deriveRegistrationPaymentStatus,
   generateBulkRingNumber,
   generateReceiptNumber,
@@ -427,15 +428,21 @@ export class RegistrationsService {
   }
 
   private mapRegistrationDetail(registration: RegistrationWithRelations) {
+    const entryFeePerPigeon = Number(registration.entryFeePerPigeon);
+    const totalFee = calculateRegistrationTotalFee(entryFeePerPigeon, registration.pigeonCount);
+    const paidAmount = collectedRegistrationFee(entryFeePerPigeon, Number(registration.paidAmount));
+
     return {
       id: registration.id,
       tournamentId: registration.tournamentId,
       participantId: registration.participantId,
       pigeonCount: registration.pigeonCount,
-      entryFeePerPigeon: Number(registration.entryFeePerPigeon),
-      totalFee: Number(registration.totalFee),
-      paidAmount: Number(registration.paidAmount),
-      paymentStatus: registration.paymentStatus,
+      entryFeePerPigeon,
+      totalFee,
+      paidAmount,
+      paymentStatus: this.toPrismaPaymentStatus(
+        deriveRegistrationPaymentStatus(totalFee, paidAmount),
+      ),
       receiptNumber: registration.receiptNumber,
       createdAt: registration.createdAt.toISOString(),
       updatedAt: registration.updatedAt.toISOString(),

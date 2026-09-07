@@ -1,7 +1,8 @@
 import { TournamentStatus } from '@prisma/client';
 
-import { DashboardService } from './dashboard.service';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
+
+import { DashboardService } from './dashboard.service';
 
 describe('DashboardService', () => {
   let service: DashboardService;
@@ -9,7 +10,7 @@ describe('DashboardService', () => {
     tournament: { count: jest.Mock };
     participant: { count: jest.Mock };
     registrationPigeon: { count: jest.Mock };
-    tournamentRegistration: { aggregate: jest.Mock };
+    tournamentRegistration: { findMany: jest.Mock };
   };
 
   beforeEach(() => {
@@ -17,7 +18,7 @@ describe('DashboardService', () => {
       tournament: { count: jest.fn() },
       participant: { count: jest.fn() },
       registrationPigeon: { count: jest.fn() },
-      tournamentRegistration: { aggregate: jest.fn() },
+      tournamentRegistration: { findMany: jest.fn() },
     };
 
     service = new DashboardService(prisma as unknown as PrismaService);
@@ -27,9 +28,9 @@ describe('DashboardService', () => {
     prisma.tournament.count.mockResolvedValueOnce(1).mockResolvedValueOnce(1);
     prisma.participant.count.mockResolvedValue(1);
     prisma.registrationPigeon.count.mockResolvedValue(5);
-    prisma.tournamentRegistration.aggregate.mockResolvedValue({
-      _sum: { totalFee: 2500, paidAmount: 2500 },
-    });
+    prisma.tournamentRegistration.findMany.mockResolvedValue([
+      { entryFeePerPigeon: 2500, paidAmount: 2500 },
+    ]);
 
     await expect(service.getStats()).resolves.toEqual({
       totalTournaments: 1,
@@ -52,9 +53,27 @@ describe('DashboardService', () => {
     expect(prisma.registrationPigeon.count).toHaveBeenCalledWith({
       where: { deletedAt: null, tournament: { deletedAt: null } },
     });
-    expect(prisma.tournamentRegistration.aggregate).toHaveBeenCalledWith({
+    expect(prisma.tournamentRegistration.findMany).toHaveBeenCalledWith({
       where: { deletedAt: null, tournament: { deletedAt: null } },
-      _sum: { totalFee: true, paidAmount: true },
+      select: { entryFeePerPigeon: true, paidAmount: true },
+    });
+  });
+
+  it('bills one entry fee per participant instead of fee times pigeons', async () => {
+    prisma.tournament.count.mockResolvedValue(1);
+    prisma.participant.count.mockResolvedValue(1);
+    prisma.registrationPigeon.count.mockResolvedValue(7);
+    prisma.tournamentRegistration.findMany.mockResolvedValue([
+      { entryFeePerPigeon: 15000, paidAmount: 105000 },
+    ]);
+
+    await expect(service.getStats()).resolves.toEqual({
+      totalTournaments: 1,
+      activeTournaments: 1,
+      totalParticipants: 1,
+      totalPigeons: 7,
+      totalEntryFees: 15000,
+      totalPrizePool: 15000,
     });
   });
 
@@ -62,9 +81,7 @@ describe('DashboardService', () => {
     prisma.tournament.count.mockResolvedValue(0);
     prisma.participant.count.mockResolvedValue(0);
     prisma.registrationPigeon.count.mockResolvedValue(0);
-    prisma.tournamentRegistration.aggregate.mockResolvedValue({
-      _sum: { totalFee: null, paidAmount: null },
-    });
+    prisma.tournamentRegistration.findMany.mockResolvedValue([]);
 
     await expect(service.getStats()).resolves.toEqual({
       totalTournaments: 0,

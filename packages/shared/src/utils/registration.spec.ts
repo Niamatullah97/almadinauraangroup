@@ -1,5 +1,6 @@
 import {
   calculateRegistrationTotalFee,
+  collectedRegistrationFee,
   deriveRegistrationPaymentStatus,
   generateReceiptNumber,
 } from './registration';
@@ -12,6 +13,16 @@ describe('registration utils', () => {
 
     it('rounds to two decimal places', () => {
       expect(calculateRegistrationTotalFee(99.99, 3)).toBe(99.99);
+    });
+  });
+
+  describe('collectedRegistrationFee', () => {
+    it('caps collected fees at the per-participant billed amount', () => {
+      expect(collectedRegistrationFee(15000, 105000)).toBe(15000);
+    });
+
+    it('keeps partial payments below the billed amount', () => {
+      expect(collectedRegistrationFee(15000, 5000)).toBe(5000);
     });
   });
 

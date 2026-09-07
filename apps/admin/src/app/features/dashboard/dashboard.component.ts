@@ -1,6 +1,7 @@
 import { Component, computed, inject, OnInit } from '@angular/core';
 
 import { StatsCardComponent } from '../../shared/components/stats-card/stats-card.component';
+
 import { DashboardService } from './dashboard.service';
 
 @Component({
@@ -66,7 +67,7 @@ import { DashboardService } from './dashboard.service';
         <app-stats-card
           label="Total Entry Fees"
           [value]="formatCurrency(stats().totalEntryFees)"
-          subtitle="Billed from registrations"
+          subtitle="Billed per participant / loft"
           icon="fee"
           variant="warning"
           [loading]="dashboardService.loading()"
