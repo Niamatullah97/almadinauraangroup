@@ -25,6 +25,8 @@ interface EntryCell {
   pigeonNumber: number;
   landingTime: string;
   isDoubleStamp: boolean;
+  savedLandingTime: string;
+  savedIsDoubleStamp: boolean;
   error: string | null;
 }
 
@@ -183,7 +185,7 @@ interface ParticipantEntryRow {
                   <td class="landing-entry__sticky landing-entry__sticky--name">
                     <strong>{{ row.participantName }}</strong>
                   </td>
-                  @for (cell of row.cells; track $index) {
+                  @for (cell of row.cells; track cell?.key ?? $index) {
                     <td class="landing-entry__pigeon-cell">
                       @if (cell) {
                         <div
@@ -203,7 +205,7 @@ interface ParticipantEntryRow {
                             (keydown.enter)="focusNextCell($event)"
                             (blur)="onCellBlur(cell)"
                           />
-                          @if (cellSubtotal(row, $index); as flightTime) {
+                          @if (cellFlightTime(cell); as flightTime) {
                             <span class="landing-entry__cumulative">{{ flightTime }}</span>
                           }
                           @if (doubleStampEnabled()) {
@@ -377,22 +379,6 @@ export class LandingTimeEntryComponent implements OnInit, OnDestroy {
     return seconds === null ? null : formatClockHms(seconds);
   }
 
-  cellSubtotal(row: ParticipantEntryRow, cellIndex: number): string | null {
-    let totalSeconds = 0;
-    let hasFlight = false;
-
-    for (let index = 0; index <= cellIndex; index += 1) {
-      const cell = row.cells[index];
-      if (!cell) continue;
-      const seconds = this.flightSeconds(cell.landingTime);
-      if (seconds === null) continue;
-      totalSeconds += seconds;
-      hasFlight = true;
-    }
-
-    return hasFlight ? formatClockHms(totalSeconds) : null;
-  }
-
   hasRowError(row: ParticipantEntryRow): boolean {
     return row.cells.some((cell) => cell?.error);
   }
@@ -428,7 +414,7 @@ export class LandingTimeEntryComponent implements OnInit, OnDestroy {
     }
 
     if (cell.error) return;
-    if (!this.autoSave) return;
+    if (!this.autoSave || !this.cellIsDirty(cell)) return;
     this.saveCells([cell], true);
   }
 
@@ -498,6 +484,8 @@ export class LandingTimeEntryComponent implements OnInit, OnDestroy {
             pigeonNumber: pigeon.pigeonNumber,
             landingTime: pigeon.landingTime ?? '',
             isDoubleStamp: pigeon.isDoubleStamp,
+            savedLandingTime: pigeon.landingTime ?? '',
+            savedIsDoubleStamp: pigeon.isDoubleStamp,
             error: null,
           } satisfies EntryCell,
         ]),
@@ -577,9 +565,7 @@ export class LandingTimeEntryComponent implements OnInit, OnDestroy {
             this.saveMessage.set(`Saved ${response.saved.length} landing time(s).`);
           }
           this.saving.set(false);
-          if (response.errors.length === 0) {
-            this.loadEntrySheet();
-          }
+          this.markCellsSaved(cellsToSave, response.errors);
         },
         error: (err) => {
           this.error.set(this.extractErrorMessage(err));
@@ -588,27 +574,40 @@ export class LandingTimeEntryComponent implements OnInit, OnDestroy {
       });
   }
 
+  private cellIsDirty(cell: EntryCell): boolean {
+    return (
+      cell.landingTime !== cell.savedLandingTime || cell.isDoubleStamp !== cell.savedIsDoubleStamp
+    );
+  }
+
+  private markCellsSaved(
+    cellsToSave: EntryCell[],
+    errors: { registrationPigeonId: string }[],
+  ): void {
+    const failedIds = new Set(errors.map((item) => item.registrationPigeonId));
+    for (const cell of cellsToSave) {
+      if (failedIds.has(cell.registrationPigeonId)) continue;
+      cell.savedLandingTime = cell.landingTime;
+      cell.savedIsDoubleStamp = cell.isDoubleStamp;
+    }
+  }
+
   private applyBulkErrors(errors: { registrationPigeonId: string; message: string }[]): void {
     if (errors.length === 0) return;
 
     const errorMap = new Map(errors.map((item) => [item.registrationPigeonId, item.message]));
-    this.participantRows.update((rows) =>
-      rows.map((row) => ({
-        ...row,
-        cells: row.cells.map((cell) =>
-          cell ? { ...cell, error: errorMap.get(cell.registrationPigeonId) ?? cell.error } : cell,
-        ),
-      })),
-    );
+    for (const cell of this.allCells()) {
+      const message = errorMap.get(cell.registrationPigeonId);
+      if (message) {
+        cell.error = message;
+      }
+    }
   }
 
   private clearCellErrors(): void {
-    this.participantRows.update((rows) =>
-      rows.map((row) => ({
-        ...row,
-        cells: row.cells.map((cell) => (cell ? { ...cell, error: null } : cell)),
-      })),
-    );
+    for (const cell of this.allCells()) {
+      cell.error = null;
+    }
   }
 
   private extractErrorMessage(error: unknown): string {

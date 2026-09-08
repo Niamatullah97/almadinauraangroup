@@ -134,12 +134,49 @@ describe('LandingTimeEntryComponent', () => {
       ),
     ).toBe('08:05:22');
     expect(
-      fixture.componentInstance.cellSubtotal(fixture.componentInstance.participantRows()[0], 0),
+      fixture.nativeElement.querySelector('.landing-entry__cumulative')?.textContent.trim(),
     ).toBe('08:05:22');
     expect(fixture.componentInstance.rowTotal(fixture.componentInstance.participantRows()[0])).toBe(
       '08:05:22',
     );
     expect(fixture.componentInstance.autoSave).toBeTrue();
+  });
+
+  it('auto-saves on blur without reloading the entry sheet', () => {
+    const landingTimeService = TestBed.inject(LandingTimeService);
+    fixture.componentInstance.onTournamentChange('tournament-1');
+    fixture.componentInstance.onRaceDayChange('race-day-1');
+    fixture.detectChanges();
+
+    const getEntrySheet = landingTimeService.getEntrySheet as jasmine.Spy;
+    expect(getEntrySheet.calls.count()).toBe(1);
+
+    const cell = fixture.componentInstance.participantRows()[0].cells[0]!;
+    cell.landingTime = '14:35:22';
+    fixture.componentInstance.onCellBlur(cell);
+    fixture.detectChanges();
+
+    expect(landingTimeService.bulkSave).toHaveBeenCalled();
+    expect(getEntrySheet.calls.count()).toBe(1);
+    expect(fixture.componentInstance.loading()).toBeFalse();
+    expect(fixture.nativeElement.querySelector('.landing-entry__table')).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('.landing-entry__cumulative')?.textContent.trim(),
+    ).toBe('08:05:22');
+  });
+
+  it('does not auto-save unchanged landing times on blur', () => {
+    const landingTimeService = TestBed.inject(LandingTimeService);
+    fixture.componentInstance.onTournamentChange('tournament-1');
+    fixture.componentInstance.onRaceDayChange('race-day-1');
+    fixture.detectChanges();
+
+    const cell = fixture.componentInstance.participantRows()[0].cells[0]!;
+    cell.landingTime = '14:35:22';
+    cell.savedLandingTime = '14:35:22';
+    fixture.componentInstance.onCellBlur(cell);
+
+    expect(landingTimeService.bulkSave).not.toHaveBeenCalled();
   });
 
   it('keeps pigeon cells enabled for superadmin after the race-day end time', () => {
