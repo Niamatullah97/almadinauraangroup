@@ -6,22 +6,36 @@
     <base href="/" />
     <meta
       name="viewport"
-      content="width=1280, user-scalable=yes, minimum-scale=0.1, maximum-scale=5"
+      content="width=1280, initial-scale=1, minimum-scale=0.15, maximum-scale=5, user-scalable=yes"
     />
     <script>
       (function () {
         var width = 1280;
-        var meta = document.querySelector('meta[name="viewport"]');
-        if (meta) {
-          meta.setAttribute(
-            'content',
-            'width=' + width + ', user-scalable=yes, minimum-scale=0.1, maximum-scale=5',
-          );
+        function scale() {
+          var deviceWidth = screen.width || screen.availWidth || 0;
+          if (!deviceWidth) deviceWidth = window.innerWidth || width;
+          if (window.innerWidth && window.innerWidth < deviceWidth && window.innerWidth < width) {
+            deviceWidth = window.innerWidth;
+          }
+          return deviceWidth >= width ? 1 : Math.max(0.15, deviceWidth / width);
         }
-        var innerWidth = window.innerWidth || width;
-        if (innerWidth < width) {
-          document.documentElement.style.zoom = String(Math.max(0.2, innerWidth / width));
+        function apply() {
+          var content =
+            'width=' +
+            width +
+            ', initial-scale=' +
+            scale() +
+            ', minimum-scale=0.15, maximum-scale=5, user-scalable=yes';
+          var metas = document.querySelectorAll('meta[name="viewport"]');
+          if (!metas.length) return;
+          for (var i = 0; i < metas.length; i++) {
+            if (metas[i].getAttribute('content') !== content) {
+              metas[i].setAttribute('content', content);
+            }
+          }
         }
+        apply();
+        document.addEventListener('DOMContentLoaded', apply);
       })();
     </script>
     <link rel="icon" type="image/png" href="assets/favicon.png" />
