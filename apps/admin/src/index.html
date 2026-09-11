@@ -6,24 +6,21 @@
     <base href="/" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes"
+      content="width=1280, user-scalable=yes, minimum-scale=0.1, maximum-scale=5"
     />
     <script>
       (function () {
         var width = 1280;
-        var screenWidth = screen.width || window.innerWidth || width;
-        if (screenWidth >= width) return;
-        var scale = Math.max(0.2, screenWidth / width);
         var meta = document.querySelector('meta[name="viewport"]');
         if (meta) {
           meta.setAttribute(
             'content',
-            'width=' +
-              width +
-              ', initial-scale=' +
-              scale +
-              ', minimum-scale=0.15, maximum-scale=5, user-scalable=yes',
+            'width=' + width + ', user-scalable=yes, minimum-scale=0.1, maximum-scale=5',
           );
+        }
+        var innerWidth = window.innerWidth || width;
+        if (innerWidth < width) {
+          document.documentElement.style.zoom = String(Math.max(0.2, innerWidth / width));
         }
       })();
     </script>
