@@ -1,11 +1,11 @@
 import Link from 'next/link';
 
 import { TournamentCard } from '@/components/tournaments/TournamentCard';
-import { getTournaments } from '@/lib/api/tournaments';
-import { dynamic } from '@/lib/runtime';
+import { LoadFailed } from '@/components/ui/LoadFailed';
+import { loadTournamentList } from '@/lib/api/tournaments';
 import { buildPageMetadata } from '@/lib/seo';
 
-export { dynamic };
+export const dynamic = 'force-dynamic';
 
 export const metadata = buildPageMetadata({
   title: 'Home',
@@ -14,7 +14,7 @@ export const metadata = buildPageMetadata({
 });
 
 export default async function HomePage() {
-  const tournaments = await getTournaments();
+  const { tournaments, unavailable } = await loadTournamentList();
   const featured = tournaments.slice(0, 3);
 
   return (
@@ -37,7 +37,9 @@ export default async function HomePage() {
 
       <section>
         <h2 className="section-title">Featured tournaments</h2>
-        {featured.length > 0 ? (
+        {unavailable ? (
+          <LoadFailed retryHref="/" />
+        ) : featured.length > 0 ? (
           <div className="grid">
             {featured.map((tournament) => (
               <TournamentCard key={tournament.id} tournament={tournament} />

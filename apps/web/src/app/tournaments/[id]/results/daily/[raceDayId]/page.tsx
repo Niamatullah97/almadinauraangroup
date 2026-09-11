@@ -6,10 +6,9 @@ import { getRaceDays } from '@/lib/api/race-days';
 import { getDailyResults } from '@/lib/api/results';
 import { getTournament } from '@/lib/api/tournaments';
 import { countParticipantLofts, formatDate } from '@/lib/format';
-import { dynamic } from '@/lib/runtime';
 import { buildPageMetadata } from '@/lib/seo';
 
-export { dynamic };
+export const dynamic = 'force-dynamic';
 
 interface Props {
   params: Promise<{ id: string; raceDayId: string }>;

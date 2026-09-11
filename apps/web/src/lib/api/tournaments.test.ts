@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { getTournament, getTournaments } from '@/lib/api/tournaments';
+import { getTournament, getTournaments, loadTournamentList } from '@/lib/api/tournaments';
 
 describe('tournaments API', () => {
   afterEach(() => {
@@ -44,5 +44,20 @@ describe('tournaments API', () => {
 
     const tournament = await getTournament('missing');
     expect(tournament).toBeNull();
+  });
+
+  it('does not throw when the tournament list request fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+      }),
+    );
+
+    await expect(loadTournamentList()).resolves.toEqual({
+      tournaments: [],
+      unavailable: true,
+    });
   });
 });

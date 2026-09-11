@@ -1,9 +1,9 @@
 import { TournamentCard } from '@/components/tournaments/TournamentCard';
-import { getTournaments } from '@/lib/api/tournaments';
-import { dynamic } from '@/lib/runtime';
+import { LoadFailed } from '@/components/ui/LoadFailed';
+import { loadTournamentList } from '@/lib/api/tournaments';
 import { buildPageMetadata } from '@/lib/seo';
 
-export { dynamic };
+export const dynamic = 'force-dynamic';
 
 export const metadata = buildPageMetadata({
   title: 'Tournaments',
@@ -12,7 +12,7 @@ export const metadata = buildPageMetadata({
 });
 
 export default async function TournamentsPage() {
-  const tournaments = await getTournaments();
+  const { tournaments, unavailable } = await loadTournamentList();
 
   return (
     <div className="container">
@@ -21,7 +21,9 @@ export default async function TournamentsPage() {
         <p>Explore upcoming and completed pigeon racing events across the country.</p>
       </div>
 
-      {tournaments.length > 0 ? (
+      {unavailable ? (
+        <LoadFailed retryHref="/tournaments" />
+      ) : tournaments.length > 0 ? (
         <div className="grid">
           {tournaments.map((tournament) => (
             <TournamentCard key={tournament.id} tournament={tournament} />

@@ -1,8 +1,8 @@
 import { ApiResponse } from '@kabootar/shared';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
-const MAX_ATTEMPTS = 3;
-const REQUEST_TIMEOUT_MS = 8000;
+const MAX_ATTEMPTS = 2;
+const REQUEST_TIMEOUT_MS = 4000;
 const RETRY_BASE_MS = process.env.VITEST ? 0 : 200;
 const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
 
@@ -85,7 +85,11 @@ function isRetryable(error: unknown): boolean {
   if (!(error instanceof ApiRequestError)) {
     return true;
   }
-  return error.status !== undefined && RETRYABLE_STATUS.has(error.status);
+  // Aborts and network failures have no HTTP status; retry those too.
+  if (error.status === undefined) {
+    return true;
+  }
+  return RETRYABLE_STATUS.has(error.status);
 }
 
 function delay(ms: number): Promise<void> {

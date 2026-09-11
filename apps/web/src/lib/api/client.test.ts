@@ -35,7 +35,22 @@ describe('fetchApi', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     await expect(fetchApi('/tournaments')).rejects.toBeInstanceOf(ApiRequestError);
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries aborted network requests then returns data', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('The operation was aborted'))
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ success: true, data: { items: [] } }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchApi('/tournaments?limit=100')).resolves.toEqual({ items: [] });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('dedupes concurrent requests to the same path', async () => {
