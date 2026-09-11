@@ -1,5 +1,4 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
 import {
   BulkGeneratePigeonsRequest,
   BulkGeneratePigeonsResponse,
@@ -8,6 +7,7 @@ import {
   RegistrationPigeonListResponse,
   UpdateRegistrationPigeonRequest,
 } from '@kabootar/shared';
+import { Observable, map } from 'rxjs';
 
 import { ApiService } from '../../core/services/api.service';
 
@@ -58,20 +58,26 @@ export class RegistrationPigeonService {
     payload: UpdateRegistrationPigeonRequest,
   ): Observable<RegistrationPigeonDto> {
     return this.api
+      .patch<RegistrationPigeonDto>(`/registrations/${registrationId}/pigeons/${pigeonId}`, payload)
+      .pipe(map((response) => response.data as RegistrationPigeonDto));
+  }
+
+  toggleDoubleStamp(registrationId: string, pigeonId: string): Observable<RegistrationPigeonDto> {
+    return this.api
       .patch<RegistrationPigeonDto>(
-        `/registrations/${registrationId}/pigeons/${pigeonId}`,
-        payload,
+        `/registrations/${registrationId}/pigeons/${pigeonId}/double-stamp`,
+        {},
       )
       .pipe(map((response) => response.data as RegistrationPigeonDto));
   }
 
-  toggleDoubleStamp(
+  toggleSingleNominated(
     registrationId: string,
     pigeonId: string,
   ): Observable<RegistrationPigeonDto> {
     return this.api
       .patch<RegistrationPigeonDto>(
-        `/registrations/${registrationId}/pigeons/${pigeonId}/double-stamp`,
+        `/registrations/${registrationId}/pigeons/${pigeonId}/single-nominated`,
         {},
       )
       .pipe(map((response) => response.data as RegistrationPigeonDto));

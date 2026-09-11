@@ -5,6 +5,7 @@ import {
   calculateDailyResults,
   calculateDoubleStampResults,
   calculateFlightDurationMs,
+  calculateSingleNominatedResults,
   calculateTotalResults,
   calculateWindowedDurationMs,
   findAverageWinner,
@@ -41,6 +42,7 @@ function pigeon(
   number: number,
   landing: Date | null,
   isDoubleStamp = false,
+  isSingleNominated = false,
 ): ResultPigeonLandingInput {
   return {
     registrationPigeonId: id,
@@ -50,6 +52,7 @@ function pigeon(
     pigeonNumber: number,
     ringNumber: `PK-${number}`,
     isDoubleStamp,
+    isSingleNominated,
     landingTime: landing,
   };
 }
@@ -197,8 +200,9 @@ describe('tournament-result calculations', () => {
 
       expect(result.firstWinner?.registrationPigeonId).toBe('p3');
       expect(result.firstWinner?.landingClockTime).toBe('08:15:00');
-      expect(result.lastWinner).toBeNull();
-      expect(result.bravePigeon).toBeNull();
+      expect(result.lastWinner?.registrationPigeonId).toBe('p2');
+      expect(result.lastWinner?.landingClockTime).toBe('09:00:00');
+      expect(result.bravePigeon?.registrationPigeonId).toBe('p2');
       expect(result.averageWinner?.participantId).toBe('participant-a');
     });
 
@@ -211,6 +215,22 @@ describe('tournament-result calculations', () => {
       const result = calculateDailyResults(RACE_DAY, pigeons, WINDOW, NOW);
 
       expect(result.firstWinner).toBeNull();
+    });
+
+    it('calculates last winner as landing times are entered before race end', () => {
+      const pigeons = [
+        pigeon('p1', 'participant-a', 'Ahmed', 'Sky Loft', 1, landingAt(8, 0)),
+        pigeon('p2', 'participant-a', 'Ahmed', 'Sky Loft', 2, landingAt(16, 30)),
+        pigeon('p3', 'participant-b', 'Bilal', 'Star Loft', 1, landingAt(9, 0)),
+        pigeon('p4', 'participant-b', 'Bilal', 'Star Loft', 2, landingAt(17, 45)),
+      ];
+
+      const result = calculateDailyResults(RACE_DAY, pigeons, WINDOW, NOW);
+
+      expect(result.lastWinner?.participantId).toBe('participant-b');
+      expect(result.lastWinner?.registrationPigeonId).toBe('p4');
+      expect(result.lastWinner?.landingClockTime).toBe('17:45:00');
+      expect(result.bravePigeon?.registrationPigeonId).toBe('p4');
     });
 
     it('picks last winner from each loft’s last landed pigeon', () => {
@@ -312,6 +332,19 @@ describe('tournament-result calculations', () => {
   });
 
   describe('double stamp results', () => {
+    it('calculates daily single nominated ranking separately', () => {
+      const pigeons = [
+        pigeon('p1', 'participant-a', 'Ahmed', 'Sky Loft', 1, landingAt(8, 0), false, true),
+        pigeon('p2', 'participant-a', 'Ahmed', 'Sky Loft', 2, landingAt(7, 30), false, false),
+        pigeon('p3', 'participant-b', 'Bilal', 'Star Loft', 1, landingAt(7, 45), false, true),
+      ];
+
+      const result = calculateSingleNominatedResults('daily', pigeons, WINDOW, RACE_DAY);
+
+      expect(result.rankings).toHaveLength(2);
+      expect(result.rankings[0].participantId).toBe('participant-b');
+    });
+
     it('calculates daily double stamp ranking separately', () => {
       const pigeons = [
         pigeon('p1', 'participant-a', 'Ahmed', 'Sky Loft', 1, landingAt(8, 0), true),

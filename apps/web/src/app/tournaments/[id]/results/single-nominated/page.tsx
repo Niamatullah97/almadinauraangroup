@@ -3,45 +3,41 @@ import { notFound } from 'next/navigation';
 import { ResultPageContent } from '@/components/results/ResultPageContent';
 import { RaceDayTabs } from '@/components/tournaments/RaceDayTabs';
 import { getRaceDays } from '@/lib/api/race-days';
-import { getDailyResults } from '@/lib/api/results';
+import { getTotalSingleNominatedResults } from '@/lib/api/results';
 import { getTournament } from '@/lib/api/tournaments';
-import { countParticipantLofts, formatDate } from '@/lib/format';
+import { countParticipantLofts } from '@/lib/format';
 import { buildPageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
 interface Props {
-  params: Promise<{ id: string; raceDayId: string }>;
+  params: Promise<{ id: string }>;
 }
 
 export async function generateMetadata({ params }: Props) {
-  const { id, raceDayId } = await params;
-  const [tournament, raceDays] = await Promise.all([getTournament(id), getRaceDays(id)]);
-  const raceDay = raceDays.find((day) => day.id === raceDayId);
+  const { id } = await params;
+  const tournament = await getTournament(id);
 
-  if (!tournament || !raceDay) {
-    return buildPageMetadata({ title: 'Daily results not found' });
+  if (!tournament) {
+    return buildPageMetadata({ title: 'Results not found' });
   }
 
   return buildPageMetadata({
-    title: `${tournament.title} — ${formatDate(raceDay.raceDate)} Results`,
-    description: `Daily race results for ${tournament.title} on ${formatDate(raceDay.raceDate)}.`,
-    path: `/tournaments/${id}/results/daily/${raceDayId}`,
+    title: `${tournament.title} — Single Nominated Results`,
+    description: `Single nominated pigeon results for ${tournament.title}.`,
+    path: `/tournaments/${id}/results/single-nominated`,
   });
 }
 
-export default async function DailyResultsPage({ params }: Props) {
-  const { id, raceDayId } = await params;
-  const [tournament, raceDays, results] = await Promise.all([
+export default async function SingleNominatedResultsPage({ params }: Props) {
+  const { id } = await params;
+  const [tournament, results, raceDays] = await Promise.all([
     getTournament(id),
+    getTotalSingleNominatedResults(id),
     getRaceDays(id),
-    getDailyResults(id, raceDayId),
   ]);
 
   if (!tournament) notFound();
-
-  const raceDay = raceDays.find((day) => day.id === raceDayId);
-  if (!raceDay) notFound();
 
   if (!results) {
     return (
@@ -49,12 +45,11 @@ export default async function DailyResultsPage({ params }: Props) {
         <RaceDayTabs
           tournamentId={id}
           raceDays={raceDays}
-          activeRaceDayId={raceDayId}
-          active="daily"
+          active="single-nominated"
           doubleStampEnabled={tournament.doubleStampEnabled}
           singleNominatedEnabled={tournament.singleNominatedEnabled}
         />
-        <div className="empty-state">Daily results are not available yet.</div>
+        <div className="empty-state">Single nominated results are not available yet.</div>
       </div>
     );
   }
@@ -66,20 +61,21 @@ export default async function DailyResultsPage({ params }: Props) {
       <RaceDayTabs
         tournamentId={id}
         raceDays={raceDays}
-        activeRaceDayId={raceDayId}
-        active="daily"
+        active="single-nominated"
         doubleStampEnabled={tournament.doubleStampEnabled}
         singleNominatedEnabled={tournament.singleNominatedEnabled}
       />
       <ResultPageContent
-        title={`${tournament.title} — ${formatDate(raceDay.raceDate)} Results`}
-        subtitle={`Race time ${raceDay.releaseTime} – ${raceDay.endTime}`}
+        title={`${tournament.title} — Single Nominated Results`}
+        subtitle="Rankings for pigeons marked as single nominated across the full tournament."
         summary={results.summary}
         loftsCount={loftsCount}
         firstWinner={results.firstWinner}
         lastWinner={results.lastWinner}
         averageWinner={results.averageWinner}
         rankings={results.rankings}
+        nominatedView="single-nominated"
+        showWinners={false}
       />
     </div>
   );

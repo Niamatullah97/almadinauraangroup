@@ -3,6 +3,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TOURNAMENT_STATUS_LABELS, TournamentDetailDto, TournamentStatus } from '@kabootar/shared';
 
+import { environment } from '../../../environments/environment';
 import { ConfirmationDialogComponent } from '../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
 import { OrganizerAccessTabComponent } from './organizer-access-tab.component';
@@ -33,6 +34,9 @@ type DetailTab = 'overview' | 'race-days' | 'registrations' | 'organizer-access'
         <div class="page-toolbar">
           <a routerLink="/tournaments" class="btn btn-secondary">Back to list</a>
           <div class="page-toolbar__actions">
+            <button type="button" class="btn btn-secondary" (click)="copyPublicUrl()">
+              {{ shareCopied() ? 'Copied!' : 'Share' }}
+            </button>
             <a [routerLink]="['/tournaments', tournament()!.id, 'edit']" class="btn btn-primary"
               >Edit tournament</a
             >
@@ -134,6 +138,10 @@ type DetailTab = 'overview' | 'race-days' | 'registrations' | 'organizer-access'
                 <span class="detail-label">Double stamp</span>
                 <strong>{{ tournament()!.doubleStampEnabled ? 'Enabled' : 'Disabled' }}</strong>
               </div>
+              <div class="detail-item">
+                <span class="detail-label">Single nominated pigeon</span>
+                <strong>{{ tournament()!.singleNominatedEnabled ? 'Enabled' : 'Disabled' }}</strong>
+              </div>
             </div>
 
             @if (tournament()!.creator) {
@@ -181,6 +189,8 @@ export class TournamentDetailComponent implements OnInit {
   readonly deleteDialogOpen = signal(false);
   readonly deleteMessage = signal('Delete this tournament? This action cannot be undone.');
   readonly activeTab = signal<DetailTab>('overview');
+  readonly shareCopied = signal(false);
+  private shareCopiedTimer: ReturnType<typeof setTimeout> | null = null;
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id') ?? '';
@@ -199,6 +209,29 @@ export class TournamentDetailComponent implements OnInit {
 
   setTab(tab: DetailTab): void {
     this.activeTab.set(tab);
+  }
+
+  copyPublicUrl(): void {
+    const tournament = this.tournament();
+    if (!tournament) return;
+    const base = environment.siteUrl.replace(/\/$/, '');
+    const url = `${base}/tournaments/${tournament.slug || tournament.id}`;
+    const copied = () => {
+      this.shareCopied.set(true);
+      if (this.shareCopiedTimer) {
+        clearTimeout(this.shareCopiedTimer);
+      }
+      this.shareCopiedTimer = setTimeout(() => this.shareCopied.set(false), 2000);
+    };
+
+    if (navigator.clipboard?.writeText) {
+      void navigator.clipboard
+        .writeText(url)
+        .then(copied)
+        .catch(() => window.prompt('Copy this tournament URL', url));
+    } else {
+      window.prompt('Copy this tournament URL', url);
+    }
   }
 
   statusClass(status: TournamentStatus): string {

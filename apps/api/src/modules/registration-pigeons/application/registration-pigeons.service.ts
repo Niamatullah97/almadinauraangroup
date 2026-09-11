@@ -63,7 +63,16 @@ export class RegistrationPigeonsService {
     }
 
     await this.assertUniqueRingNumber(registration.tournamentId, dto.ringNumber);
-    this.assertDoubleStampAllowed(registration.tournament.doubleStampEnabled, dto.isDoubleStamp);
+    this.assertNominatedFlagAllowed(
+      registration.tournament.doubleStampEnabled,
+      dto.isDoubleStamp,
+      'Double stamp',
+    );
+    this.assertNominatedFlagAllowed(
+      registration.tournament.singleNominatedEnabled,
+      dto.isSingleNominated,
+      'Single nominated pigeon',
+    );
 
     try {
       const pigeon = await this.prisma.$transaction(async (tx) => {
@@ -77,6 +86,7 @@ export class RegistrationPigeonsService {
             color: dto.color.trim(),
             gender: dto.gender,
             isDoubleStamp: dto.isDoubleStamp ?? false,
+            isSingleNominated: dto.isSingleNominated ?? false,
             status: dto.status ?? PigeonStatus.ACTIVE,
           },
         });
@@ -175,7 +185,16 @@ export class RegistrationPigeonsService {
       await this.assertUniqueRingNumber(registration.tournamentId, dto.ringNumber, id);
     }
 
-    this.assertDoubleStampAllowed(registration.tournament.doubleStampEnabled, dto.isDoubleStamp);
+    this.assertNominatedFlagAllowed(
+      registration.tournament.doubleStampEnabled,
+      dto.isDoubleStamp,
+      'Double stamp',
+    );
+    this.assertNominatedFlagAllowed(
+      registration.tournament.singleNominatedEnabled,
+      dto.isSingleNominated,
+      'Single nominated pigeon',
+    );
 
     try {
       const pigeon = await this.prisma.registrationPigeon.update({
@@ -186,6 +205,7 @@ export class RegistrationPigeonsService {
           ...(dto.color !== undefined && { color: dto.color.trim() }),
           ...(dto.gender !== undefined && { gender: dto.gender }),
           ...(dto.isDoubleStamp !== undefined && { isDoubleStamp: dto.isDoubleStamp }),
+          ...(dto.isSingleNominated !== undefined && { isSingleNominated: dto.isSingleNominated }),
           ...(dto.status !== undefined && { status: dto.status }),
         },
       });
@@ -199,12 +219,33 @@ export class RegistrationPigeonsService {
 
   async toggleDoubleStamp(registrationId: string, id: string) {
     const registration = await this.getRegistrationForMutation(registrationId);
-    this.assertDoubleStampAllowed(registration.tournament.doubleStampEnabled, true);
+    this.assertNominatedFlagAllowed(
+      registration.tournament.doubleStampEnabled,
+      true,
+      'Double stamp',
+    );
     const existing = await this.getPigeonOrThrow(registrationId, id);
 
     const pigeon = await this.prisma.registrationPigeon.update({
       where: { id },
       data: { isDoubleStamp: !existing.isDoubleStamp },
+    });
+
+    return this.mapPigeon(pigeon);
+  }
+
+  async toggleSingleNominated(registrationId: string, id: string) {
+    const registration = await this.getRegistrationForMutation(registrationId);
+    this.assertNominatedFlagAllowed(
+      registration.tournament.singleNominatedEnabled,
+      true,
+      'Single nominated pigeon',
+    );
+    const existing = await this.getPigeonOrThrow(registrationId, id);
+
+    const pigeon = await this.prisma.registrationPigeon.update({
+      where: { id },
+      data: { isSingleNominated: !existing.isSingleNominated },
     });
 
     return this.mapPigeon(pigeon);
@@ -349,7 +390,13 @@ export class RegistrationPigeonsService {
       where: { id: registrationId, deletedAt: null },
       include: {
         tournament: {
-          select: { id: true, status: true, doubleStampEnabled: true, totalPigeonsAllowed: true },
+          select: {
+            id: true,
+            status: true,
+            doubleStampEnabled: true,
+            singleNominatedEnabled: true,
+            totalPigeonsAllowed: true,
+          },
         },
       },
     });
@@ -373,9 +420,13 @@ export class RegistrationPigeonsService {
     return registration;
   }
 
-  private assertDoubleStampAllowed(enabled: boolean, isDoubleStamp?: boolean): void {
-    if (isDoubleStamp && !enabled) {
-      throw new BadRequestException('Double stamp is not enabled for this tournament');
+  private assertNominatedFlagAllowed(
+    enabled: boolean,
+    isNominated?: boolean,
+    label = 'Nominated pigeon',
+  ): void {
+    if (isNominated && !enabled) {
+      throw new BadRequestException(`${label} is not enabled for this tournament`);
     }
   }
 
@@ -462,6 +513,7 @@ export class RegistrationPigeonsService {
       color: pigeon.color,
       gender: pigeon.gender,
       isDoubleStamp: pigeon.isDoubleStamp,
+      isSingleNominated: pigeon.isSingleNominated ?? false,
       status: pigeon.status,
       createdAt: pigeon.createdAt.toISOString(),
       updatedAt: pigeon.updatedAt.toISOString(),

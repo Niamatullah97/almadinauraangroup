@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 
 import { TournamentNav } from '@/components/tournaments/TournamentNav';
 import { ResultSummary, TournamentBanner } from '@/components/ui/ResultCards';
+import { ShareButton } from '@/components/ui/ShareButton';
 import { getRaceDays } from '@/lib/api/race-days';
 import { getTotalResults } from '@/lib/api/results';
 import { getTournament } from '@/lib/api/tournaments';
@@ -50,9 +51,12 @@ export default async function TournamentDetailPage({ params }: Props) {
     <div className="container">
       <TournamentBanner title={tournament.title} bannerUrl={bannerUrl} />
 
-      <div className="page-hero">
-        <h1>{tournament.title}</h1>
-        {tournament.description && <p>{tournament.description}</p>}
+      <div className="page-hero page-hero--split">
+        <div>
+          <h1>{tournament.title}</h1>
+          {tournament.description && <p>{tournament.description}</p>}
+        </div>
+        <ShareButton />
       </div>
 
       <TournamentNav
@@ -60,6 +64,7 @@ export default async function TournamentDetailPage({ params }: Props) {
         active="overview"
         raceDayId={raceDays[0]?.id}
         doubleStampEnabled={tournament.doubleStampEnabled}
+        singleNominatedEnabled={tournament.singleNominatedEnabled}
       />
 
       <div className="meta-row" style={{ marginBottom: '1.5rem' }}>
@@ -92,6 +97,14 @@ export default async function TournamentDetailPage({ params }: Props) {
           <Link href={`/tournaments/${id}/results/double-stamp`} className="card link-card">
             <h3>Double stamp results</h3>
             <p style={{ color: 'var(--color-muted)' }}>Rankings for double-stamp pigeons only.</p>
+          </Link>
+        )}
+        {tournament.singleNominatedEnabled && (
+          <Link href={`/tournaments/${id}/results/single-nominated`} className="card link-card">
+            <h3>Single nominated results</h3>
+            <p style={{ color: 'var(--color-muted)' }}>
+              Rankings for single nominated pigeons only.
+            </p>
           </Link>
         )}
         {raceDays.length > 0 && (

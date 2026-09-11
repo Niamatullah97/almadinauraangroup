@@ -12,6 +12,12 @@ export async function getTotalDoubleStampResults(
   return fetchApi<DoubleStampResultDto>(`/tournaments/${tournamentId}/results/double-stamp`);
 }
 
+export async function getTotalSingleNominatedResults(
+  tournamentId: string,
+): Promise<DoubleStampResultDto | null> {
+  return fetchApi<DoubleStampResultDto>(`/tournaments/${tournamentId}/results/single-nominated`);
+}
+
 export async function getDailyResults(
   tournamentId: string,
   raceDayId: string,

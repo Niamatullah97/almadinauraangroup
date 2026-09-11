@@ -70,6 +70,7 @@ export class LandingTimesService {
       endTime: raceDay.endTime,
       status: raceDay.status,
       doubleStampEnabled: tournament.doubleStampEnabled,
+      singleNominatedEnabled: tournament.singleNominatedEnabled,
       pigeonCount: tournament.pigeonCount,
       participants: registrations.map((registration) => ({
         participantId: registration.participantId,
@@ -85,6 +86,7 @@ export class LandingTimesService {
             landingTimeId: landing?.id ?? null,
             landingTime: landing ? formatLandingTimeForInput(landing.landingTime) : null,
             isDoubleStamp: pigeon.isDoubleStamp,
+            isSingleNominated: pigeon.isSingleNominated ?? false,
           };
         }),
       })),
@@ -121,10 +123,10 @@ export class LandingTimesService {
     await this.assertNoDuplicateEntry(raceDayId, dto.registrationPigeonId);
 
     const landingTime = this.parseAndValidateLandingTime(raceDay, dto.landingTime);
-    await this.applyDoubleStampFlag(
+    await this.applyNominatedFlags(
       dto.registrationPigeonId,
-      dto.isDoubleStamp,
-      await this.isDoubleStampEnabled(tournamentId),
+      dto,
+      await this.getTournamentEntrySettings(tournamentId),
     );
 
     try {
@@ -153,7 +155,7 @@ export class LandingTimesService {
     actor?: JwtPayload,
   ) {
     const raceDay = await this.getRaceDayForMutation(tournamentId, raceDayId, actor);
-    const doubleStampEnabled = await this.isDoubleStampEnabled(tournamentId);
+    const nominatedSettings = await this.getTournamentEntrySettings(tournamentId);
     const duplicateIds = findDuplicateRegistrationPigeonIds(
       dto.entries.map((entry) => entry.registrationPigeonId),
     );
@@ -180,11 +182,7 @@ export class LandingTimesService {
         }
 
         const landingTime = this.parseAndValidateLandingTime(raceDay, entry.landingTime);
-        await this.applyDoubleStampFlag(
-          entry.registrationPigeonId,
-          entry.isDoubleStamp,
-          doubleStampEnabled,
-        );
+        await this.applyNominatedFlags(entry.registrationPigeonId, entry, nominatedSettings);
         const existing = await this.prisma.pigeonLandingTime.findFirst({
           where: {
             raceDayId,
@@ -242,10 +240,10 @@ export class LandingTimesService {
       data: { landingTime },
     });
 
-    await this.applyDoubleStampFlag(
+    await this.applyNominatedFlags(
       existing.registrationPigeonId,
-      dto.isDoubleStamp,
-      await this.isDoubleStampEnabled(tournamentId),
+      dto,
+      await this.getTournamentEntrySettings(tournamentId),
     );
 
     await this.refreshWinners(tournamentId, raceDayId);
@@ -338,30 +336,37 @@ export class LandingTimesService {
   private async getTournamentEntrySettings(tournamentId: string) {
     const tournament = await this.prisma.tournament.findFirst({
       where: liveTournamentWhere(tournamentId),
-      select: { doubleStampEnabled: true, totalPigeonsAllowed: true },
+      select: {
+        doubleStampEnabled: true,
+        singleNominatedEnabled: true,
+        totalPigeonsAllowed: true,
+      },
     });
 
     return {
       doubleStampEnabled: tournament?.doubleStampEnabled ?? false,
+      singleNominatedEnabled: tournament?.singleNominatedEnabled ?? false,
       pigeonCount: tournament?.totalPigeonsAllowed ?? 0,
     };
   }
 
-  private async isDoubleStampEnabled(tournamentId: string): Promise<boolean> {
-    const tournament = await this.getTournamentEntrySettings(tournamentId);
-    return tournament.doubleStampEnabled;
-  }
-
-  private async applyDoubleStampFlag(
+  private async applyNominatedFlags(
     registrationPigeonId: string,
-    isDoubleStamp: boolean | undefined,
-    enabled: boolean,
+    flags: { isDoubleStamp?: boolean; isSingleNominated?: boolean },
+    settings: { doubleStampEnabled: boolean; singleNominatedEnabled: boolean },
   ): Promise<void> {
-    if (isDoubleStamp === undefined || !enabled) return;
+    const data: { isDoubleStamp?: boolean; isSingleNominated?: boolean } = {};
+    if (flags.isDoubleStamp !== undefined && settings.doubleStampEnabled) {
+      data.isDoubleStamp = flags.isDoubleStamp;
+    }
+    if (flags.isSingleNominated !== undefined && settings.singleNominatedEnabled) {
+      data.isSingleNominated = flags.isSingleNominated;
+    }
+    if (Object.keys(data).length === 0) return;
 
     await this.prisma.registrationPigeon.update({
       where: { id: registrationPigeonId },
-      data: { isDoubleStamp },
+      data,
     });
   }
 

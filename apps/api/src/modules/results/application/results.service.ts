@@ -6,6 +6,7 @@ import {
   TournamentResultInput,
   calculateDailyResults,
   calculateDoubleStampResults,
+  calculateSingleNominatedResults,
   calculateTotalResults,
   toDailyPigeonInputs,
 } from '@kabootar/shared';
@@ -25,12 +26,14 @@ const WINNER_CATEGORIES = [
 export interface TournamentExportRaceDay {
   daily: DailyResultDto;
   doubleStamp: DoubleStampResultDto;
+  singleNominated: DoubleStampResultDto;
 }
 
 export interface TournamentExportBundle {
   raceDays: TournamentExportRaceDay[];
   total: TotalResultDto;
   doubleStampTotal: DoubleStampResultDto;
+  singleNominatedTotal: DoubleStampResultDto;
 }
 
 @Injectable()
@@ -80,6 +83,29 @@ export class ResultsService {
     });
   }
 
+  async getDailySingleNominatedResults(tournamentId: string, raceDayId: string) {
+    const input = await this.buildTournamentInput(tournamentId);
+    const raceDay = input.raceDays.find((day) => day.raceDayId === raceDayId);
+
+    if (!raceDay) {
+      throw new NotFoundException('Race day not found');
+    }
+
+    const pigeons = toDailyPigeonInputs(input, raceDayId);
+    const window = { startTime: input.startTime, endTime: input.endTime };
+    return calculateSingleNominatedResults('daily', pigeons, window, raceDay, undefined, {
+      totalPigeonsAllowed: undefined,
+    });
+  }
+
+  async getTotalSingleNominatedResults(tournamentId: string) {
+    const input = await this.buildTournamentInput(tournamentId);
+    const window = { startTime: input.startTime, endTime: input.endTime };
+    return calculateSingleNominatedResults('total', input.pigeons, window, undefined, input, {
+      totalPigeonsAllowed: undefined,
+    });
+  }
+
   async getCompleteResults(tournamentId: string): Promise<TournamentExportBundle> {
     const input = await this.buildTournamentInput(tournamentId);
     const window = { startTime: input.startTime, endTime: input.endTime };
@@ -92,6 +118,16 @@ export class ResultsService {
         doubleStamp: calculateDoubleStampResults('daily', pigeons, window, raceDay, undefined, {
           totalPigeonsAllowed: undefined,
         }),
+        singleNominated: calculateSingleNominatedResults(
+          'daily',
+          pigeons,
+          window,
+          raceDay,
+          undefined,
+          {
+            totalPigeonsAllowed: undefined,
+          },
+        ),
       };
     });
 
@@ -99,6 +135,14 @@ export class ResultsService {
       raceDays,
       total: calculateTotalResults(input, dailyOptions),
       doubleStampTotal: calculateDoubleStampResults(
+        'total',
+        input.pigeons,
+        window,
+        undefined,
+        input,
+        { totalPigeonsAllowed: undefined },
+      ),
+      singleNominatedTotal: calculateSingleNominatedResults(
         'total',
         input.pigeons,
         window,
@@ -213,6 +257,7 @@ export class ResultsService {
         pigeonNumber: pigeon.pigeonNumber,
         ringNumber: pigeon.ringNumber,
         isDoubleStamp: pigeon.isDoubleStamp,
+        isSingleNominated: pigeon.isSingleNominated ?? false,
         landings: pigeon.landingTimes.map((landing) => ({
           raceDayId: landing.raceDayId,
           landingTime: landing.landingTime,

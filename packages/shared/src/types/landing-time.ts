@@ -18,6 +18,7 @@ export interface LandingTimePigeonRowDto {
   landingTimeId: string | null;
   landingTime: string | null;
   isDoubleStamp: boolean;
+  isSingleNominated: boolean;
 }
 
 export interface LandingTimeParticipantGroupDto {
@@ -36,6 +37,7 @@ export interface LandingTimeEntrySheetResponse {
   endTime: string;
   status: RaceDayStatus;
   doubleStampEnabled: boolean;
+  singleNominatedEnabled: boolean;
   pigeonCount: number;
   participants: LandingTimeParticipantGroupDto[];
 }
@@ -45,11 +47,13 @@ export interface CreateLandingTimeRequest {
   registrationPigeonId: string;
   landingTime: string;
   isDoubleStamp?: boolean;
+  isSingleNominated?: boolean;
 }
 
 export interface UpdateLandingTimeRequest {
   landingTime: string;
   isDoubleStamp?: boolean;
+  isSingleNominated?: boolean;
 }
 
 export interface BulkLandingTimeEntryRequest {
@@ -57,6 +61,7 @@ export interface BulkLandingTimeEntryRequest {
   registrationPigeonId: string;
   landingTime: string;
   isDoubleStamp?: boolean;
+  isSingleNominated?: boolean;
 }
 
 export interface BulkSaveLandingTimesRequest {

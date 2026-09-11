@@ -7,8 +7,9 @@ interface RaceDayTabsProps {
   tournamentId: string;
   raceDays: RaceDayDto[];
   activeRaceDayId?: string;
-  active: 'daily' | 'total' | 'double-stamp';
+  active: 'daily' | 'total' | 'double-stamp' | 'single-nominated';
   doubleStampEnabled?: boolean;
+  singleNominatedEnabled?: boolean;
 }
 
 export function RaceDayTabs({
@@ -17,6 +18,7 @@ export function RaceDayTabs({
   activeRaceDayId,
   active,
   doubleStampEnabled = false,
+  singleNominatedEnabled = false,
 }: RaceDayTabsProps) {
   return (
     <nav className="tabs result-tabs" aria-label="Tournament results">
@@ -44,6 +46,15 @@ export function RaceDayTabs({
           className={active === 'double-stamp' ? 'tab tab--active' : 'tab'}
         >
           Double Stamp Total
+        </Link>
+      )}
+      {singleNominatedEnabled && (
+        <Link
+          href={`/tournaments/${tournamentId}/results/single-nominated`}
+          prefetch={false}
+          className={active === 'single-nominated' ? 'tab tab--active' : 'tab'}
+        >
+          Single Nominated Total
         </Link>
       )}
     </nav>

@@ -14,6 +14,7 @@ interface ResultPageContentProps {
   rankings: ParticipantResultRow[];
   compactPigeonColumns?: boolean;
   doubleStampView?: boolean;
+  nominatedView?: 'double-stamp' | 'single-nominated';
   showWinners?: boolean;
   rankingsContent?: ReactNode;
 }
@@ -29,6 +30,7 @@ export function ResultPageContent({
   rankings,
   compactPigeonColumns = false,
   doubleStampView = false,
+  nominatedView,
   showWinners = true,
   rankingsContent,
 }: ResultPageContentProps) {
@@ -58,6 +60,10 @@ export function ResultPageContent({
           rows={rankings}
           compactPigeonColumns={compactPigeonColumns}
           doubleStampView={doubleStampView}
+          nominatedView={nominatedView}
+          firstWinner={firstWinner}
+          lastWinner={lastWinner}
+          averageWinner={averageWinner}
         />
       )}
     </>

@@ -84,6 +84,10 @@ interface RankingTableProps {
   rows: ParticipantResultRow[];
   compactPigeonColumns?: boolean;
   doubleStampView?: boolean;
+  nominatedView?: 'double-stamp' | 'single-nominated';
+  firstWinner?: ResultWinner | null;
+  lastWinner?: ResultWinner | null;
+  averageWinner?: ResultWinner | null;
 }
 
 function pigeonColumnCount(rows: ParticipantResultRow[]): number {
@@ -103,19 +107,70 @@ function pigeonForColumn(
   return row.pigeons.find((pigeon) => pigeon.pigeonNumber === pigeonNumber);
 }
 
-function doubleStampPigeon(row: ParticipantResultRow): ResultPigeonRow | undefined {
+function nominatedPigeon(
+  row: ParticipantResultRow,
+  kind: 'double-stamp' | 'single-nominated',
+): ResultPigeonRow | undefined {
+  if (kind === 'single-nominated') {
+    return row.pigeons.find((pigeon) => pigeon.isSingleNominated) ?? row.pigeons[0];
+  }
   return row.pigeons.find((pigeon) => pigeon.isDoubleStamp) ?? row.pigeons[0];
+}
+
+function winnerSlotClasses(flags: {
+  first?: boolean;
+  last?: boolean;
+  average?: boolean;
+  brave?: boolean;
+}): string {
+  const classes = ['timetable-time'];
+  if (flags.first || flags.last || flags.average || flags.brave) {
+    classes.push('timetable-cell--flash');
+  }
+  if (flags.first) classes.push('timetable-cell--first');
+  if (flags.last) classes.push('timetable-cell--last');
+  if (flags.average) classes.push('timetable-cell--average');
+  if (flags.brave) classes.push('timetable-cell--brave');
+  return classes.join(' ');
+}
+
+function WinnerSlotBadges({
+  first,
+  last,
+  average,
+  brave,
+}: {
+  first?: boolean;
+  last?: boolean;
+  average?: boolean;
+  brave?: boolean;
+}) {
+  return (
+    <>
+      {first && <span className="winner-slot-badge winner-slot-badge--first">First winner</span>}
+      {last && <span className="winner-slot-badge winner-slot-badge--last">Last winner</span>}
+      {average && (
+        <span className="winner-slot-badge winner-slot-badge--average">Average winner</span>
+      )}
+      {brave && <span className="bravery-badge">Bravery</span>}
+    </>
+  );
 }
 
 export function RankingTable({
   rows,
   compactPigeonColumns = false,
   doubleStampView = false,
+  nominatedView,
+  firstWinner = null,
+  lastWinner = null,
+  averageWinner = null,
 }: RankingTableProps) {
   if (rows.length === 0) {
     return <div className="empty-state">No rankings available yet.</div>;
   }
 
+  const singleColumnView = nominatedView ?? (doubleStampView ? 'double-stamp' : undefined);
   const pigeonCount = pigeonColumnCount(rows);
   const pigeonNumbers = compactPigeonColumns
     ? Array.from(
@@ -131,16 +186,17 @@ export function RankingTable({
             <th>Sr</th>
             <th>Picture</th>
             <th>Loft</th>
-            {doubleStampView ? (
+            {singleColumnView ? (
               <th>Pigeon</th>
             ) : (
               pigeonNumbers.map((number) => <th key={number}>Pigeon {number}</th>)
             )}
-            {!doubleStampView && <th>Total</th>}
+            {!singleColumnView && <th>Total</th>}
           </tr>
         </thead>
         <tbody>
           {rows.map((row, index) => {
+            const isAverageLoft = averageWinner?.participantId === row.participantId;
             return (
               <tr key={row.participantId}>
                 <td>{row.rank ?? index + 1}</td>
@@ -157,7 +213,7 @@ export function RankingTable({
                 </td>
                 <td>
                   <div className="timetable-name">{row.participantName}</div>
-                  {!doubleStampView &&
+                  {!singleColumnView &&
                     row.currentFlyingTimeMs !== null &&
                     row.remainingPigeons > 0 && (
                       <div className="timetable-flying">
@@ -165,15 +221,36 @@ export function RankingTable({
                       </div>
                     )}
                 </td>
-                {doubleStampView ? (
+                {singleColumnView ? (
                   <td className="timetable-time">
-                    {doubleStampPigeon(row)?.landingClockTime ?? ''}
+                    {nominatedPigeon(row, singleColumnView)?.landingClockTime ?? ''}
                   </td>
                 ) : (
                   pigeonNumbers.map((number) => {
                     const pigeon = pigeonForColumn(row, number);
+                    const isFirst = Boolean(
+                      pigeon?.registrationPigeonId &&
+                      pigeon.registrationPigeonId === firstWinner?.registrationPigeonId,
+                    );
+                    const isLast = Boolean(
+                      pigeon?.registrationPigeonId &&
+                      pigeon.registrationPigeonId === lastWinner?.registrationPigeonId,
+                    );
+                    const isAverage = Boolean(
+                      pigeon?.registrationPigeonId &&
+                      pigeon.registrationPigeonId === averageWinner?.registrationPigeonId,
+                    );
+                    const isBrave = Boolean(pigeon?.isBrave && pigeon.landingClockTime);
                     return (
-                      <td key={number} className="timetable-time">
+                      <td
+                        key={number}
+                        className={winnerSlotClasses({
+                          first: isFirst,
+                          last: isLast,
+                          average: isAverage,
+                          brave: isBrave,
+                        })}
+                      >
                         {pigeon?.landingClockTime ?? ''}
                         {pigeon?.landingTimeMs !== null && pigeon?.landingTimeMs !== undefined && (
                           <span className="timetable-cumulative">
@@ -183,16 +260,33 @@ export function RankingTable({
                         {pigeon?.isDoubleStamp && pigeon.landingClockTime && (
                           <span className="double-stamp-badge">Double stamp</span>
                         )}
-                        {pigeon?.isBrave && pigeon.landingClockTime && (
-                          <span className="bravery-badge">Bravery</span>
+                        {pigeon?.isSingleNominated && pigeon.landingClockTime && (
+                          <span className="single-nominated-badge">Nominated</span>
                         )}
+                        <WinnerSlotBadges
+                          first={isFirst}
+                          last={isLast}
+                          average={isAverage}
+                          brave={isBrave}
+                        />
                       </td>
                     );
                   })
                 )}
-                {!doubleStampView && (
-                  <td className="timetable-total">
+                {!singleColumnView && (
+                  <td
+                    className={
+                      isAverageLoft
+                        ? 'timetable-total timetable-cell--flash timetable-cell--average'
+                        : 'timetable-total'
+                    }
+                  >
                     {formatClockDuration(row.landedPigeons > 0 ? row.totalLandingTimeMs : 0)}
+                    {isAverageLoft && (
+                      <span className="winner-slot-badge winner-slot-badge--average">
+                        Average winner
+                      </span>
+                    )}
                   </td>
                 )}
               </tr>
@@ -211,9 +305,18 @@ interface TournamentTotalTableProps {
     label: string;
     results: DailyResultDto | null;
   }>;
+  firstWinner?: ResultWinner | null;
+  lastWinner?: ResultWinner | null;
+  averageWinner?: ResultWinner | null;
 }
 
-export function TournamentTotalTable({ rows, raceDays }: TournamentTotalTableProps) {
+export function TournamentTotalTable({
+  rows,
+  raceDays,
+  firstWinner = null,
+  lastWinner = null,
+  averageWinner = null,
+}: TournamentTotalTableProps) {
   if (rows.length === 0) {
     return <div className="empty-state">No rankings available yet.</div>;
   }
@@ -264,8 +367,19 @@ export function TournamentTotalTable({ rows, raceDays }: TournamentTotalTablePro
                     <span className="timetable-avatar timetable-avatar--fallback" />
                   )}
                 </td>
-                <td>
+                <td
+                  className={winnerSlotClasses({
+                    first: firstWinner?.participantId === row.participantId,
+                    last: lastWinner?.participantId === row.participantId,
+                    brave: lastWinner?.participantId === row.participantId,
+                  })}
+                >
                   <div className="timetable-name">{row.participantName}</div>
+                  <WinnerSlotBadges
+                    first={firstWinner?.participantId === row.participantId}
+                    last={lastWinner?.participantId === row.participantId}
+                    brave={lastWinner?.participantId === row.participantId}
+                  />
                 </td>
                 <td className="timetable-time">{landedAcrossRaceDays}</td>
                 {dailyRows.map((dailyRow, raceDayIndex) => (
@@ -275,7 +389,20 @@ export function TournamentTotalTable({ rows, raceDays }: TournamentTotalTablePro
                       : '—'}
                   </td>
                 ))}
-                <td className="timetable-total">{formatClockDuration(totalAcrossRaceDays)}</td>
+                <td
+                  className={
+                    averageWinner?.participantId === row.participantId
+                      ? 'timetable-total timetable-cell--flash timetable-cell--average'
+                      : 'timetable-total'
+                  }
+                >
+                  {formatClockDuration(totalAcrossRaceDays)}
+                  {averageWinner?.participantId === row.participantId && (
+                    <span className="winner-slot-badge winner-slot-badge--average">
+                      Average winner
+                    </span>
+                  )}
+                </td>
               </tr>
             );
           })}

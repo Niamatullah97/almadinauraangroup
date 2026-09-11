@@ -47,6 +47,7 @@ export default async function DoubleStampResultsPage({ params }: Props) {
           raceDays={raceDays}
           active="double-stamp"
           doubleStampEnabled={tournament.doubleStampEnabled}
+          singleNominatedEnabled={tournament.singleNominatedEnabled}
         />
         <div className="empty-state">Double stamp results are not available yet.</div>
       </div>
@@ -62,6 +63,7 @@ export default async function DoubleStampResultsPage({ params }: Props) {
         raceDays={raceDays}
         active="double-stamp"
         doubleStampEnabled={tournament.doubleStampEnabled}
+        singleNominatedEnabled={tournament.singleNominatedEnabled}
       />
       <ResultPageContent
         title={`${tournament.title} — Double Stamp Results`}
@@ -72,7 +74,7 @@ export default async function DoubleStampResultsPage({ params }: Props) {
         lastWinner={results.lastWinner}
         averageWinner={results.averageWinner}
         rankings={results.rankings}
-        doubleStampView
+        nominatedView="double-stamp"
         showWinners={false}
       />
     </div>

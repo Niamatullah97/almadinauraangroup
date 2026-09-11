@@ -1,5 +1,5 @@
-import { IsBoolean, IsOptional, IsString, IsUUID, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsBoolean, IsOptional, IsString, IsUUID, Matches } from 'class-validator';
 
 export class CreateLandingTimeDto {
   @ApiProperty()
@@ -21,4 +21,9 @@ export class CreateLandingTimeDto {
   @IsOptional()
   @IsBoolean()
   isDoubleStamp?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isSingleNominated?: boolean;
 }

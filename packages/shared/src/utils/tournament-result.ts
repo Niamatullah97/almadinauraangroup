@@ -128,6 +128,7 @@ function toLandingInputs(
     pigeonNumber: pigeon.pigeonNumber,
     ringNumber: pigeon.ringNumber,
     isDoubleStamp: pigeon.isDoubleStamp,
+    isSingleNominated: pigeon.isSingleNominated ?? false,
     landingTime: earliestLanding(pigeon),
     calculatedDurationMs:
       pigeon.landings.length > 0
@@ -153,6 +154,7 @@ export function buildPigeonRows(
     pigeonNumber: pigeon.pigeonNumber,
     ringNumber: pigeon.ringNumber,
     isDoubleStamp: pigeon.isDoubleStamp,
+    isSingleNominated: pigeon.isSingleNominated ?? false,
     isBrave: false,
     landingTimeMs: pigeon.landingTime
       ? (pigeon.calculatedDurationMs ?? calculateElapsedDurationMs(origin, pigeon.landingTime))
@@ -416,7 +418,7 @@ export function findFirstWinner(
 }
 
 /**
- * Last winner is calculated after the race ends. Every loft that landed at
+ * Last winner updates as landing times are entered. Every loft that landed at
  * least one pigeon before race end is eligible. Among those, the loft whose
  * last landed pigeon landed closest to race end wins — even if that loft has
  * fewer pigeons than others.
@@ -427,14 +429,10 @@ export function findLastWinner(
   window: RacingWindow,
   options: {
     totalPigeonsAllowed?: number;
-    raceEnded: boolean;
+    raceEnded?: boolean;
     raceEnd: Date;
   },
 ): ResultWinner | null {
-  if (!options.raceEnded) {
-    return null;
-  }
-
   const grouped = groupPigeonsByParticipant(pigeons);
   let winner: ResultWinner | null = null;
   let winnerLandingMs = -1;
@@ -529,13 +527,10 @@ export function calculateDailyResults(
   const now = options.now ?? new Date();
   const origin = combineReleaseDateTime(raceDay.raceDate, raceDay.releaseTime);
   const raceEnd = combineReleaseDateTime(raceDay.raceDate, raceDay.endTime);
-  const raceEnded =
-    options.raceEnded !== undefined ? options.raceEnded : isRaceEnded(raceEnd, now, raceDay.status);
   const aggregates = aggregateParticipantResults(pigeons, origin, window, now, raceEnd);
   const rankings = assignCompetitionRanks(aggregates);
   const lastWinner = findLastWinner(pigeons, origin, window, {
     totalPigeonsAllowed: options.totalPigeonsAllowed,
-    raceEnded,
     raceEnd,
   });
   const bravePigeon = toBravePigeon(lastWinner);
@@ -565,8 +560,6 @@ export function calculateTotalResults(
   const originTime = input.raceDays[0]?.releaseTime ?? input.startTime;
   const origin = combineReleaseDateTime(originDate, originTime);
   const raceEnd = combineReleaseDateTime(input.endDate, input.endTime);
-  const raceEnded =
-    options.raceEnded !== undefined ? options.raceEnded : isRaceEnded(raceEnd, now, input.status);
   const landingInputs = toLandingInputs(input.pigeons, input.raceDays);
   const uniquePigeonKeys = new Set(input.pigeons.map((pigeon) => pigeon.registrationPigeonId));
   const landedPigeonKeys = new Set(
@@ -580,7 +573,6 @@ export function calculateTotalResults(
   const totalPigeonsAllowed = options.totalPigeonsAllowed ?? input.totalPigeonsAllowed;
   const lastWinner = findLastWinner(landingInputs, origin, window, {
     totalPigeonsAllowed,
-    raceEnded,
     raceEnd,
   });
   const bravePigeon = toBravePigeon(lastWinner);
@@ -601,7 +593,10 @@ export function calculateTotalResults(
   };
 }
 
-export function calculateDoubleStampResults(
+type NominatedPigeonFlag = 'isDoubleStamp' | 'isSingleNominated';
+
+export function calculateNominatedPigeonResults(
+  nominatedFlag: NominatedPigeonFlag,
   scope: 'daily' | 'total',
   pigeons: ResultPigeonLandingInput[] | TournamentResultPigeonInput[],
   window: RacingWindow,
@@ -611,14 +606,15 @@ export function calculateDoubleStampResults(
 ): DoubleStampResultDto {
   const options: ResultCalculationOptions =
     nowOrOptions instanceof Date ? { now: nowOrOptions } : nowOrOptions;
+  const label = nominatedFlag === 'isDoubleStamp' ? 'double stamp' : 'single nominated';
 
   if (scope === 'daily') {
     if (!raceDay) {
-      throw new Error('Race day is required for daily double stamp results');
+      throw new Error(`Race day is required for daily ${label} results`);
     }
 
     const filtered = (pigeons as ResultPigeonLandingInput[]).filter(
-      (pigeon) => pigeon.isDoubleStamp,
+      (pigeon) => pigeon[nominatedFlag],
     );
     const daily = calculateDailyResults(raceDay, filtered, window, {
       ...options,
@@ -638,10 +634,10 @@ export function calculateDoubleStampResults(
   }
 
   if (!tournamentInput) {
-    throw new Error('Tournament input is required for total double stamp results');
+    throw new Error(`Tournament input is required for total ${label} results`);
   }
 
-  const filtered = tournamentInput.pigeons.filter((pigeon) => pigeon.isDoubleStamp);
+  const filtered = tournamentInput.pigeons.filter((pigeon) => pigeon[nominatedFlag]);
   const total = calculateTotalResults(
     {
       ...tournamentInput,
@@ -664,6 +660,44 @@ export function calculateDoubleStampResults(
   };
 }
 
+export function calculateDoubleStampResults(
+  scope: 'daily' | 'total',
+  pigeons: ResultPigeonLandingInput[] | TournamentResultPigeonInput[],
+  window: RacingWindow,
+  raceDay?: ResultRaceDayInput,
+  tournamentInput?: TournamentResultInput,
+  nowOrOptions: Date | ResultCalculationOptions = new Date(),
+): DoubleStampResultDto {
+  return calculateNominatedPigeonResults(
+    'isDoubleStamp',
+    scope,
+    pigeons,
+    window,
+    raceDay,
+    tournamentInput,
+    nowOrOptions,
+  );
+}
+
+export function calculateSingleNominatedResults(
+  scope: 'daily' | 'total',
+  pigeons: ResultPigeonLandingInput[] | TournamentResultPigeonInput[],
+  window: RacingWindow,
+  raceDay?: ResultRaceDayInput,
+  tournamentInput?: TournamentResultInput,
+  nowOrOptions: Date | ResultCalculationOptions = new Date(),
+): DoubleStampResultDto {
+  return calculateNominatedPigeonResults(
+    'isSingleNominated',
+    scope,
+    pigeons,
+    window,
+    raceDay,
+    tournamentInput,
+    nowOrOptions,
+  );
+}
+
 export function toDailyPigeonInputs(
   input: TournamentResultInput,
   raceDayId: string,
@@ -678,6 +712,7 @@ export function toDailyPigeonInputs(
       pigeonNumber: pigeon.pigeonNumber,
       ringNumber: pigeon.ringNumber,
       isDoubleStamp: pigeon.isDoubleStamp,
+      isSingleNominated: pigeon.isSingleNominated ?? false,
       landingTime: landing?.landingTime ?? null,
       profileImage: pigeon.profileImage ?? null,
     };

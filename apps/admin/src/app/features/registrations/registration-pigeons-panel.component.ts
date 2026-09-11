@@ -8,6 +8,7 @@ import {
 } from '@kabootar/shared';
 
 import { ConfirmationDialogComponent } from '../../shared/components/confirmation-dialog/confirmation-dialog.component';
+
 import { RegistrationPigeonModalComponent } from './registration-pigeon-modal.component';
 import { RegistrationPigeonService } from './registration-pigeon.service';
 
@@ -29,13 +30,17 @@ import { RegistrationPigeonService } from './registration-pigeon.service';
               }
             </p>
           </div>
-          <button type="button" class="modal__close" (click)="close.emit()" aria-label="Close">×</button>
+          <button type="button" class="modal__close" (click)="close.emit()" aria-label="Close">
+            ×
+          </button>
         </div>
 
         <div class="modal__body">
           @if (canManage()) {
             <div class="page-toolbar pigeons-panel__toolbar">
-              <button type="button" class="btn btn-primary btn-sm" (click)="openCreateModal()">Add pigeon</button>
+              <button type="button" class="btn btn-primary btn-sm" (click)="openCreateModal()">
+                Add pigeon
+              </button>
             </div>
           }
 
@@ -55,6 +60,9 @@ import { RegistrationPigeonService } from './registration-pigeon.service';
                   <th>Gender</th>
                   @if (doubleStampEnabled()) {
                     <th>Double stamp</th>
+                  }
+                  @if (singleNominatedEnabled()) {
+                    <th>Nominated</th>
                   }
                   <th>Status</th>
                   @if (canManage()) {
@@ -85,14 +93,38 @@ import { RegistrationPigeonService } from './registration-pigeon.service';
                         }
                       </td>
                     }
+                    @if (singleNominatedEnabled()) {
+                      <td>
+                        @if (canManage()) {
+                          <button
+                            type="button"
+                            class="toggle-chip"
+                            [class.toggle-chip--active]="pigeon.isSingleNominated"
+                            (click)="toggleSingleNominated(pigeon)"
+                          >
+                            {{ pigeon.isSingleNominated ? 'Yes' : 'No' }}
+                          </button>
+                        } @else {
+                          {{ pigeon.isSingleNominated ? 'Yes' : 'No' }}
+                        }
+                      </td>
+                    }
                     <td>{{ pigeon.status }}</td>
                     @if (canManage()) {
                       <td>
                         <div class="row-actions">
-                          <button type="button" class="btn btn-secondary btn-sm" (click)="openEditModal(pigeon)">
+                          <button
+                            type="button"
+                            class="btn btn-secondary btn-sm"
+                            (click)="openEditModal(pigeon)"
+                          >
                             Edit
                           </button>
-                          <button type="button" class="btn btn-danger btn-sm" (click)="openDeleteDialog(pigeon)">
+                          <button
+                            type="button"
+                            class="btn btn-danger btn-sm"
+                            (click)="openDeleteDialog(pigeon)"
+                          >
                             Remove
                           </button>
                         </div>
@@ -118,6 +150,7 @@ import { RegistrationPigeonService } from './registration-pigeon.service';
         [open]="modalOpen()"
         [pigeon]="selectedPigeon()"
         [doubleStampEnabled]="doubleStampEnabled()"
+        [singleNominatedEnabled]="singleNominatedEnabled()"
         [submitting]="saving()"
         [submitError]="saveError()"
         (save)="savePigeon($event)"
@@ -146,15 +179,18 @@ export class RegistrationPigeonsPanelComponent {
   readonly registration = input<TournamentRegistrationDetailDto | null>(null);
   readonly tournamentStatus = input.required<TournamentStatus>();
   readonly doubleStampEnabled = input(false);
+  readonly singleNominatedEnabled = input(false);
 
   readonly close = output<void>();
 
   private readonly registrationPigeonService = inject(RegistrationPigeonService);
 
   readonly pigeons = signal<RegistrationPigeonDto[]>([]);
-  readonly summary = signal<{ assignedCount: number; registeredCount: number; remainingCount: number } | null>(
-    null,
-  );
+  readonly summary = signal<{
+    assignedCount: number;
+    registeredCount: number;
+    remainingCount: number;
+  } | null>(null);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly modalOpen = signal(false);
@@ -208,7 +244,10 @@ export class RegistrationPigeonsPanelComponent {
     const selected = this.selectedPigeon();
     const request$ = selected
       ? this.registrationPigeonService.update(registration.id, selected.id, payload)
-      : this.registrationPigeonService.create(registration.id, payload as CreateRegistrationPigeonRequest);
+      : this.registrationPigeonService.create(
+          registration.id,
+          payload as CreateRegistrationPigeonRequest,
+        );
 
     request$.subscribe({
       next: () => {
@@ -254,6 +293,22 @@ export class RegistrationPigeonsPanelComponent {
       },
       error: () => {
         this.error.set('Unable to update double stamp flag.');
+      },
+    });
+  }
+
+  toggleSingleNominated(pigeon: RegistrationPigeonDto): void {
+    const registration = this.registration();
+    if (!registration) return;
+
+    this.registrationPigeonService.toggleSingleNominated(registration.id, pigeon.id).subscribe({
+      next: (updated) => {
+        this.pigeons.update((items) =>
+          items.map((item) => (item.id === updated.id ? updated : item)),
+        );
+      },
+      error: () => {
+        this.error.set('Unable to update nominated pigeon flag.');
       },
     });
   }

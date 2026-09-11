@@ -78,6 +78,10 @@ export class ReportsService {
       raceDate: item.daily.raceDate,
       rankings: item.doubleStamp.rankings,
     }));
+    const singleNominatedDays = bundle.raceDays.map((item) => ({
+      raceDate: item.daily.raceDate,
+      rankings: item.singleNominated?.rankings ?? [],
+    }));
 
     if (scope === ReportResultScope.PARTICIPANT) {
       const participant = bundle.total.rankings.find((row) => row.participantId === participantId);
@@ -119,6 +123,34 @@ export class ReportsService {
         );
       }
 
+      const participantSingleNominated = filterResultForParticipant(
+        bundle.singleNominatedTotal ?? {
+          scope: 'total',
+          summary: { totalPigeons: 0, landedPigeons: 0, remainingPigeons: 0 },
+          firstWinner: null,
+          lastWinner: null,
+          averageWinner: null,
+          bravePigeon: null,
+          rankings: [],
+        },
+        participantId!,
+      );
+      if (participantSingleNominated.rankings.length > 0) {
+        sections.push(
+          buildLoftTotalPdfSection(
+            'Participant Single Nominated Total',
+            'Single nominated pigeons across every race day',
+            participantSingleNominated,
+            bundle.raceDays.map((item) => ({
+              raceDate: item.daily.raceDate,
+              rankings: (item.singleNominated?.rankings ?? []).filter(
+                (row) => row.participantId === participantId,
+              ),
+            })),
+          ),
+        );
+      }
+
       const buffer = await this.pdfGenerator.buildTournamentResultPdf({
         tournamentTitle: tournament.title,
         city: tournament.city,
@@ -150,6 +182,16 @@ export class ReportsService {
           bundle.doubleStampTotal,
           doubleStampDays,
         ),
+        ...(bundle.singleNominatedTotal?.rankings.length
+          ? [
+              buildLoftTotalPdfSection(
+                'Single Nominated Total',
+                'Single nominated pigeons only, with a separate total for each loft',
+                bundle.singleNominatedTotal,
+                singleNominatedDays,
+              ),
+            ]
+          : []),
       ],
     });
 

@@ -1,17 +1,10 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-} from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Permission } from '@kabootar/shared';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { Permissions, Public } from '../../../common/decorators/auth.decorators';
 import { RegistrationPigeonsService } from '../application/registration-pigeons.service';
+
 import { BulkGeneratePigeonsDto } from './dto/bulk-generate-pigeons.dto';
 import { CreateRegistrationPigeonDto } from './dto/create-registration-pigeon.dto';
 import { UpdateRegistrationPigeonDto } from './dto/update-registration-pigeon.dto';
@@ -58,6 +51,13 @@ export class RegistrationPigeonsController {
   @Permissions(Permission.PIGEONS_UPDATE)
   toggleDoubleStamp(@Param('registrationId') registrationId: string, @Param('id') id: string) {
     return this.registrationPigeonsService.toggleDoubleStamp(registrationId, id);
+  }
+
+  @Patch(':id/single-nominated')
+  @ApiBearerAuth()
+  @Permissions(Permission.PIGEONS_UPDATE)
+  toggleSingleNominated(@Param('registrationId') registrationId: string, @Param('id') id: string) {
+    return this.registrationPigeonsService.toggleSingleNominated(registrationId, id);
   }
 
   @Patch(':id')

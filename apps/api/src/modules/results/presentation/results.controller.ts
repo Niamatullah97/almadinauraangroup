@@ -22,6 +22,12 @@ export class ResultsController {
   }
 
   @Public()
+  @Get('results/single-nominated')
+  getTotalSingleNominatedResults(@Param('tournamentId') tournamentId: string) {
+    return this.resultsService.getTotalSingleNominatedResults(tournamentId);
+  }
+
+  @Public()
   @Get('race-days/:raceDayId/results')
   getDailyResults(
     @Param('tournamentId') tournamentId: string,
@@ -37,5 +43,14 @@ export class ResultsController {
     @Param('raceDayId') raceDayId: string,
   ) {
     return this.resultsService.getDailyDoubleStampResults(tournamentId, raceDayId);
+  }
+
+  @Public()
+  @Get('race-days/:raceDayId/results/single-nominated')
+  getDailySingleNominatedResults(
+    @Param('tournamentId') tournamentId: string,
+    @Param('raceDayId') raceDayId: string,
+  ) {
+    return this.resultsService.getDailySingleNominatedResults(tournamentId, raceDayId);
   }
 }

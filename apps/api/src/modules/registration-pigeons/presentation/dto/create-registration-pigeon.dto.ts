@@ -1,3 +1,5 @@
+import { PigeonSex, PigeonStatus } from '@kabootar/shared';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsEnum,
@@ -9,8 +11,6 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { PigeonSex, PigeonStatus } from '@kabootar/shared';
 
 export class CreateRegistrationPigeonDto {
   @ApiProperty({ example: 'PK-2026-001' })
@@ -39,6 +39,11 @@ export class CreateRegistrationPigeonDto {
   @IsOptional()
   @IsBoolean()
   isDoubleStamp?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isSingleNominated?: boolean;
 
   @ApiPropertyOptional({ enum: PigeonStatus })
   @IsOptional()

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
 import { TournamentStatus } from '@kabootar/shared';
+import { of } from 'rxjs';
 
 import { TournamentListComponent } from './tournament-list.component';
 import { TournamentService } from './tournament.service';
@@ -29,6 +29,7 @@ describe('TournamentListComponent', () => {
                     entryFee: 500,
                     totalPigeonsAllowed: 100,
                     doubleStampEnabled: false,
+                    singleNominatedEnabled: false,
                     startDate: '2026-04-01',
                     endDate: '2026-04-02',
                     startTime: '08:00',

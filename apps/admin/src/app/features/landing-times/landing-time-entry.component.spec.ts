@@ -65,6 +65,7 @@ describe('LandingTimeEntryComponent', () => {
                 endTime: '18:00',
                 status: RaceDayStatus.LIVE,
                 doubleStampEnabled: false,
+                singleNominatedEnabled: false,
                 pigeonCount: 1,
                 participants: [
                   {
@@ -80,6 +81,7 @@ describe('LandingTimeEntryComponent', () => {
                         landingTimeId: null,
                         landingTime: null,
                         isDoubleStamp: false,
+                        isSingleNominated: false,
                       },
                     ],
                   },

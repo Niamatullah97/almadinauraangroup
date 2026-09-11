@@ -1,3 +1,5 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { TournamentStatus } from '@prisma/client';
 import {
   IsBoolean,
   IsDateString,
@@ -14,8 +16,6 @@ import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TournamentStatus } from '@prisma/client';
 
 @ValidatorConstraint({ name: 'EndDateAfterStartDate', async: false })
 class EndDateAfterStartDate implements ValidatorConstraintInterface {
@@ -77,6 +77,11 @@ export class CreateTournamentDto {
   @IsOptional()
   @IsBoolean()
   doubleStampEnabled?: boolean;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  singleNominatedEnabled?: boolean;
 
   @ApiProperty({ example: '2026-04-01' })
   @IsDateString()

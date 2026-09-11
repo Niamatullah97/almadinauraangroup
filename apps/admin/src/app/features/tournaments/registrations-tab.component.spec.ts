@@ -1,10 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
 import { RegistrationPaymentStatus, TournamentStatus } from '@kabootar/shared';
+import { of } from 'rxjs';
+
+import { RegistrationService } from '../registrations/registration.service';
 
 import { RegistrationsTabComponent } from './registrations-tab.component';
-import { RegistrationService } from '../registrations/registration.service';
-import { ParticipantService } from '../participants/participant.service';
 
 describe('RegistrationsTabComponent', () => {
   let fixture: ComponentFixture<RegistrationsTabComponent>;
@@ -16,9 +16,9 @@ describe('RegistrationsTabComponent', () => {
         {
           provide: RegistrationService,
           useValue: {
-            list: jasmine.createSpy('list').and.returnValue(
-              of({ items: [], total: 0, page: 1, limit: 100, totalPages: 0 }),
-            ),
+            list: jasmine
+              .createSpy('list')
+              .and.returnValue(of({ items: [], total: 0, page: 1, limit: 100, totalPages: 0 })),
             create: jasmine.createSpy('create'),
             update: jasmine.createSpy('update'),
             delete: jasmine.createSpy('delete'),
@@ -29,9 +29,9 @@ describe('RegistrationsTabComponent', () => {
         {
           provide: ParticipantService,
           useValue: {
-            list: jasmine.createSpy('list').and.returnValue(
-              of({ items: [], total: 0, page: 1, limit: 100, totalPages: 0 }),
-            ),
+            list: jasmine
+              .createSpy('list')
+              .and.returnValue(of({ items: [], total: 0, page: 1, limit: 100, totalPages: 0 })),
             resolveProfileUrl: (profileImage: string | null | undefined) => profileImage ?? null,
             getInitials: () => 'AK',
             uploadProfile: jasmine.createSpy('uploadProfile'),
@@ -50,6 +50,7 @@ describe('RegistrationsTabComponent', () => {
       entryFee: 500,
       totalPigeonsAllowed: 100,
       doubleStampEnabled: false,
+      singleNominatedEnabled: false,
       startDate: '2026-04-01',
       endDate: '2026-04-05',
       startTime: '08:00',
@@ -112,7 +113,9 @@ describe('RegistrationsTabComponent', () => {
     fixture.componentInstance.loading.set(false);
     fixture.detectChanges();
 
-    const placeholder = fixture.nativeElement.querySelector('.participant-cell__avatar--placeholder');
+    const placeholder = fixture.nativeElement.querySelector(
+      '.participant-cell__avatar--placeholder',
+    );
     expect(placeholder).toBeTruthy();
     expect(fixture.nativeElement.querySelector('img.participant-cell__avatar')).toBeNull();
   });
@@ -124,10 +127,14 @@ describe('RegistrationsTabComponent', () => {
     fixture.componentInstance.loading.set(false);
     fixture.detectChanges();
 
-    const image = fixture.nativeElement.querySelector('img.participant-cell__avatar') as HTMLImageElement;
+    const image = fixture.nativeElement.querySelector(
+      'img.participant-cell__avatar',
+    ) as HTMLImageElement;
     expect(image).toBeTruthy();
     expect(image.src).toContain('/uploads/participants/niamat.jpg');
-    expect(fixture.nativeElement.querySelector('.participant-cell__avatar--placeholder')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('.participant-cell__avatar--placeholder'),
+    ).toBeNull();
   });
 });
 

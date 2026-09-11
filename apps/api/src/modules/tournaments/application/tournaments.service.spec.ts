@@ -28,6 +28,7 @@ describe('TournamentsService', () => {
     entryFee: { toString: () => '500' },
     totalPigeonsAllowed: 100,
     doubleStampEnabled: false,
+    singleNominatedEnabled: false,
     startDate: new Date('2026-04-01'),
     endDate: new Date('2026-04-03'),
     startTime: '08:00',

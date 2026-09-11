@@ -176,12 +176,27 @@ export interface TournamentFormSubmit {
         </div>
 
         <label class="checkbox-field form-grid__full">
-          <input id="doubleStampEnabled" type="checkbox" formControlName="doubleStampEnabled" />
+          <input
+            id="doubleStampEnabled"
+            type="checkbox"
+            formControlName="doubleStampEnabled"
+            (change)="onDoubleStampToggle()"
+          />
           Enable double stamp (nominated pigeon)
         </label>
+        <label class="checkbox-field form-grid__full">
+          <input
+            id="singleNominatedEnabled"
+            type="checkbox"
+            formControlName="singleNominatedEnabled"
+            (change)="onSingleNominatedToggle()"
+          />
+          Enable single nominated pigeon
+        </label>
         <p class="form-hint form-grid__full">
-          When enabled, admins can mark nominated pigeons while entering landing times. Public
-          results show a Double stamp badge on those pigeons.
+          Choose one option, or leave both unchecked for a simple tournament. Admins can mark those
+          pigeons while entering landing times. Public results show a badge on the nominated
+          pigeons.
         </p>
 
         <div class="form-field form-grid__full">
@@ -241,6 +256,7 @@ export class TournamentFormComponent implements OnInit {
       endTime: ['18:00', Validators.required],
       status: [TournamentStatus.DRAFT, Validators.required],
       doubleStampEnabled: [false],
+      singleNominatedEnabled: [false],
     },
     {
       validators: (group) => {
@@ -279,6 +295,7 @@ export class TournamentFormComponent implements OnInit {
         endTime: value.endTime,
         status: value.status,
         doubleStampEnabled: value.doubleStampEnabled,
+        singleNominatedEnabled: value.singleNominatedEnabled,
       });
 
       this.bannerPreview.set(this.tournamentService.resolveBannerUrl(value.bannerImage));
@@ -294,6 +311,18 @@ export class TournamentFormComponent implements OnInit {
   showError(controlName: string): boolean {
     const control = this.form.get(controlName);
     return !!control && control.invalid && (control.dirty || control.touched);
+  }
+
+  onDoubleStampToggle(): void {
+    if (this.form.controls.doubleStampEnabled.value) {
+      this.form.controls.singleNominatedEnabled.setValue(false);
+    }
+  }
+
+  onSingleNominatedToggle(): void {
+    if (this.form.controls.singleNominatedEnabled.value) {
+      this.form.controls.doubleStampEnabled.setValue(false);
+    }
   }
 
   onBannerSelected(event: Event): void {

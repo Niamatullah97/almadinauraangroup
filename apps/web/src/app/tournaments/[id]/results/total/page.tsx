@@ -56,6 +56,7 @@ export default async function TotalResultsPage({ params }: Props) {
           raceDays={raceDays}
           active="total"
           doubleStampEnabled={tournament.doubleStampEnabled}
+          singleNominatedEnabled={tournament.singleNominatedEnabled}
         />
         <div className="empty-state">Total results are not available yet.</div>
       </div>
@@ -71,6 +72,7 @@ export default async function TotalResultsPage({ params }: Props) {
         raceDays={raceDays}
         active="total"
         doubleStampEnabled={tournament.doubleStampEnabled}
+        singleNominatedEnabled={tournament.singleNominatedEnabled}
       />
       <ResultPageContent
         title={`${tournament.title} — Total Results`}
@@ -81,7 +83,15 @@ export default async function TotalResultsPage({ params }: Props) {
         lastWinner={results.lastWinner}
         averageWinner={results.averageWinner}
         rankings={results.rankings}
-        rankingsContent={<TournamentTotalTable rows={results.rankings} raceDays={raceDayResults} />}
+        rankingsContent={
+          <TournamentTotalTable
+            rows={results.rankings}
+            raceDays={raceDayResults}
+            firstWinner={results.firstWinner}
+            lastWinner={results.lastWinner}
+            averageWinner={results.averageWinner}
+          />
+        }
       />
     </div>
   );

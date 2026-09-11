@@ -25,8 +25,10 @@ interface EntryCell {
   pigeonNumber: number;
   landingTime: string;
   isDoubleStamp: boolean;
+  isSingleNominated: boolean;
   savedLandingTime: string;
   savedIsDoubleStamp: boolean;
+  savedIsSingleNominated: boolean;
   error: string | null;
 }
 
@@ -222,6 +224,20 @@ interface ParticipantEntryRow {
                               Double stamp
                             </label>
                           }
+                          @if (singleNominatedEnabled()) {
+                            <label
+                              class="landing-entry__stamp-badge"
+                              [class.landing-entry__stamp-badge--on]="cell.isSingleNominated"
+                            >
+                              <input
+                                type="checkbox"
+                                [disabled]="!canEnterTimes()"
+                                [(ngModel)]="cell.isSingleNominated"
+                                (change)="onStampChange(cell)"
+                              />
+                              Nominated
+                            </label>
+                          }
                           @if (cell.error) {
                             <p class="form-error">{{ cell.error }}</p>
                           }
@@ -347,6 +363,10 @@ export class LandingTimeEntryComponent implements OnInit, OnDestroy {
 
   doubleStampEnabled(): boolean {
     return this.entrySheet()?.doubleStampEnabled ?? false;
+  }
+
+  singleNominatedEnabled(): boolean {
+    return this.entrySheet()?.singleNominatedEnabled ?? false;
   }
 
   profileUrl(profileImage: string | null): string | null {
@@ -484,8 +504,10 @@ export class LandingTimeEntryComponent implements OnInit, OnDestroy {
             pigeonNumber: pigeon.pigeonNumber,
             landingTime: pigeon.landingTime ?? '',
             isDoubleStamp: pigeon.isDoubleStamp,
+            isSingleNominated: pigeon.isSingleNominated,
             savedLandingTime: pigeon.landingTime ?? '',
             savedIsDoubleStamp: pigeon.isDoubleStamp,
+            savedIsSingleNominated: pigeon.isSingleNominated,
             error: null,
           } satisfies EntryCell,
         ]),
@@ -556,6 +578,7 @@ export class LandingTimeEntryComponent implements OnInit, OnDestroy {
           registrationPigeonId: cell.registrationPigeonId,
           landingTime: cell.landingTime,
           ...(this.doubleStampEnabled() && { isDoubleStamp: cell.isDoubleStamp }),
+          ...(this.singleNominatedEnabled() && { isSingleNominated: cell.isSingleNominated }),
         })),
       })
       .subscribe({
@@ -576,7 +599,9 @@ export class LandingTimeEntryComponent implements OnInit, OnDestroy {
 
   private cellIsDirty(cell: EntryCell): boolean {
     return (
-      cell.landingTime !== cell.savedLandingTime || cell.isDoubleStamp !== cell.savedIsDoubleStamp
+      cell.landingTime !== cell.savedLandingTime ||
+      cell.isDoubleStamp !== cell.savedIsDoubleStamp ||
+      cell.isSingleNominated !== cell.savedIsSingleNominated
     );
   }
 
@@ -589,6 +614,7 @@ export class LandingTimeEntryComponent implements OnInit, OnDestroy {
       if (failedIds.has(cell.registrationPigeonId)) continue;
       cell.savedLandingTime = cell.landingTime;
       cell.savedIsDoubleStamp = cell.isDoubleStamp;
+      cell.savedIsSingleNominated = cell.isSingleNominated;
     }
   }
 

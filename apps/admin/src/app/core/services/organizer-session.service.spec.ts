@@ -19,6 +19,7 @@ describe('OrganizerSessionService', () => {
       entryFee: 500,
       totalPigeonsAllowed: 100,
       doubleStampEnabled: false,
+      singleNominatedEnabled: false,
       startDate: '2026-04-01',
       endDate: '2026-04-05',
       startTime: '08:00',

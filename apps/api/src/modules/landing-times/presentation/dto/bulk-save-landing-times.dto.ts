@@ -1,3 +1,4 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
@@ -9,7 +10,6 @@ import {
   Matches,
   ValidateNested,
 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class BulkLandingTimeEntryDto {
   @ApiProperty()
@@ -31,6 +31,11 @@ export class BulkLandingTimeEntryDto {
   @IsOptional()
   @IsBoolean()
   isDoubleStamp?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isSingleNominated?: boolean;
 }
 
 export class BulkSaveLandingTimesDto {

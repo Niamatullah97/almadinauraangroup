@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TournamentStatus } from '@kabootar/shared';
 import { of } from 'rxjs';
-import { PigeonSex, TournamentStatus } from '@kabootar/shared';
 
-import { RegistrationPigeonsPanelComponent } from './registration-pigeons-panel.component';
 import { RegistrationPigeonService } from './registration-pigeon.service';
+import { RegistrationPigeonsPanelComponent } from './registration-pigeons-panel.component';
 
 describe('RegistrationPigeonsPanelComponent', () => {
   let fixture: ComponentFixture<RegistrationPigeonsPanelComponent>;
@@ -15,14 +15,17 @@ describe('RegistrationPigeonsPanelComponent', () => {
         {
           provide: RegistrationPigeonService,
           useValue: {
-            list: jasmine.createSpy('list').and.returnValue(
-              of({ items: [], assignedCount: 3, registeredCount: 0, remainingCount: 3 }),
-            ),
+            list: jasmine
+              .createSpy('list')
+              .and.returnValue(
+                of({ items: [], assignedCount: 3, registeredCount: 0, remainingCount: 3 }),
+              ),
             create: jasmine.createSpy('create'),
             update: jasmine.createSpy('update'),
             delete: jasmine.createSpy('delete'),
             bulkGenerate: jasmine.createSpy('bulkGenerate'),
             toggleDoubleStamp: jasmine.createSpy('toggleDoubleStamp'),
+            toggleSingleNominated: jasmine.createSpy('toggleSingleNominated'),
           },
         },
       ],

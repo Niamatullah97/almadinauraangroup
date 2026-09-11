@@ -176,8 +176,9 @@ model Tournament {
   description         String?          @db.Text
   city                String           @db.VarChar(120)
   entryFee            Decimal          @map("entry_fee") @db.Decimal(10, 2)
-  totalPigeonsAllowed Int              @map("total_pigeons_allowed")
-  doubleStampEnabled  Boolean          @default(false) @map("double_stamp_enabled")
+  totalPigeonsAllowed    Int              @map("total_pigeons_allowed")
+  doubleStampEnabled     Boolean          @default(false) @map("double_stamp_enabled")
+  singleNominatedEnabled Boolean          @default(false) @map("single_nominated_enabled")
   startDate           DateTime         @map("start_date") @db.Date
   endDate             DateTime         @map("end_date") @db.Date
   startTime           String           @map("start_time") @db.VarChar(5)
@@ -338,7 +339,8 @@ model RegistrationPigeon {
   pigeonNumber   Int          @map("pigeon_number")
   color          String       @db.VarChar(50)
   gender         PigeonSex    @map("gender")
-  isDoubleStamp  Boolean      @default(false) @map("is_double_stamp")
+  isDoubleStamp      Boolean      @default(false) @map("is_double_stamp")
+  isSingleNominated  Boolean      @default(false) @map("is_single_nominated")
   status         PigeonStatus @default(ACTIVE)
   createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz
   updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz

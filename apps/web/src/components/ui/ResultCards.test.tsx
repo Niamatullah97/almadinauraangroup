@@ -152,7 +152,7 @@ describe('ResultCards', () => {
     expect(screen.queryByText('Pigeon 2')).not.toBeInTheDocument();
     expect(screen.getByText('04:15:00')).toBeInTheDocument();
     expect(
-      screen.queryByText('04:15:00').closest('td')?.querySelector('.timetable-cumulative'),
+      screen.queryByText('04:15:00')?.closest('td')?.querySelector('.timetable-cumulative'),
     ).toBeNull();
     expect(screen.queryByText('Double stamp')).not.toBeInTheDocument();
     expect(screen.queryByText('Total')).not.toBeInTheDocument();

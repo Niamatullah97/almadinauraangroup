@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 const apiUrl = process.env.API_URL;
 const uploadsUrl = process.env.UPLOADS_URL ?? '';
+const siteUrl =
+  process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://almadinauraangroup.com';
 
 if (!apiUrl) {
   throw new Error('API_URL is required for the Cloudflare Pages build');
@@ -12,6 +14,7 @@ if (!apiUrl) {
 for (const [name, value] of [
   ['API_URL', apiUrl],
   ['UPLOADS_URL', uploadsUrl],
+  ['SITE_URL', siteUrl],
 ]) {
   if (value) {
     new URL(value);
@@ -25,6 +28,7 @@ export const environment = {
   production: true,
   apiUrl: ${JSON.stringify(apiUrl.replace(/\/$/, ''))},
   uploadsUrl: ${JSON.stringify(uploadsUrl.replace(/\/$/, ''))},
+  siteUrl: ${JSON.stringify(siteUrl.replace(/\/$/, ''))},
 };
 `;
 

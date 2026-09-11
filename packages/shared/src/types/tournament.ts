@@ -21,6 +21,7 @@ export interface TournamentDto {
   entryFee: number;
   totalPigeonsAllowed: number;
   doubleStampEnabled: boolean;
+  singleNominatedEnabled: boolean;
   startDate: string;
   endDate: string;
   startTime: string;
@@ -51,6 +52,7 @@ export interface CreateTournamentRequest {
   entryFee: number;
   totalPigeonsAllowed: number;
   doubleStampEnabled?: boolean;
+  singleNominatedEnabled?: boolean;
   startDate: string;
   endDate: string;
   startTime: string;

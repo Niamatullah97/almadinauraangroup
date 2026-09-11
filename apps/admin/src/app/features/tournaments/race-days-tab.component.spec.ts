@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
 import { TournamentStatus } from '@kabootar/shared';
+import { of } from 'rxjs';
 
-import { RaceDaysTabComponent } from './race-days-tab.component';
 import { RaceDayService } from './race-day.service';
+import { RaceDaysTabComponent } from './race-days-tab.component';
 
 describe('RaceDaysTabComponent', () => {
   let fixture: ComponentFixture<RaceDaysTabComponent>;
@@ -34,6 +34,7 @@ describe('RaceDaysTabComponent', () => {
       entryFee: 500,
       totalPigeonsAllowed: 100,
       doubleStampEnabled: false,
+      singleNominatedEnabled: false,
       startDate: '2026-04-01',
       endDate: '2026-04-05',
       startTime: '08:00',

@@ -18,7 +18,9 @@ import {
       <div class="modal" role="dialog" aria-modal="true">
         <div class="modal__header">
           <h3>{{ pigeon() ? 'Edit pigeon' : 'Add pigeon' }}</h3>
-          <button type="button" class="modal__close" (click)="close.emit()" aria-label="Close">×</button>
+          <button type="button" class="modal__close" (click)="close.emit()" aria-label="Close">
+            ×
+          </button>
         </div>
 
         <form [formGroup]="form" (ngSubmit)="onSubmit()">
@@ -79,6 +81,13 @@ import {
               </label>
             }
 
+            @if (singleNominatedEnabled()) {
+              <label class="checkbox-field">
+                <input type="checkbox" formControlName="isSingleNominated" />
+                Single nominated pigeon
+              </label>
+            }
+
             @if (submitError()) {
               <p class="form-error">{{ submitError() }}</p>
             }
@@ -106,6 +115,7 @@ export class RegistrationPigeonModalComponent {
   readonly open = input(false);
   readonly pigeon = input<RegistrationPigeonDto | null>(null);
   readonly doubleStampEnabled = input(false);
+  readonly singleNominatedEnabled = input(false);
   readonly submitting = input(false);
   readonly submitError = input<string | null>(null);
 
@@ -122,6 +132,7 @@ export class RegistrationPigeonModalComponent {
     gender: [PigeonSex.COCK, Validators.required],
     status: [PigeonStatus.ACTIVE, Validators.required],
     isDoubleStamp: [false],
+    isSingleNominated: [false],
   });
 
   constructor() {
@@ -137,6 +148,7 @@ export class RegistrationPigeonModalComponent {
           gender: pigeon.gender,
           status: pigeon.status,
           isDoubleStamp: pigeon.isDoubleStamp,
+          isSingleNominated: pigeon.isSingleNominated,
         });
       } else {
         this.form.reset({
@@ -146,6 +158,7 @@ export class RegistrationPigeonModalComponent {
           gender: PigeonSex.COCK,
           status: PigeonStatus.ACTIVE,
           isDoubleStamp: false,
+          isSingleNominated: false,
         });
       }
     });
@@ -169,6 +182,7 @@ export class RegistrationPigeonModalComponent {
       gender: value.gender,
       status: value.status,
       isDoubleStamp: this.doubleStampEnabled() ? value.isDoubleStamp : false,
+      isSingleNominated: this.singleNominatedEnabled() ? value.isSingleNominated : false,
       ...(value.pigeonNumber ? { pigeonNumber: value.pigeonNumber } : {}),
     };
 

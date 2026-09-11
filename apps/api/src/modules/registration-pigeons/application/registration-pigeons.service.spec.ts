@@ -1,9 +1,10 @@
+import { PigeonSex as SharedPigeonSex } from '@kabootar/shared';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { PigeonSex, TournamentStatus } from '@prisma/client';
-import { PigeonSex as SharedPigeonSex } from '@kabootar/shared';
+
+import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
 
 import { RegistrationPigeonsService } from './registration-pigeons.service';
-import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
 
 describe('RegistrationPigeonsService', () => {
   let service: RegistrationPigeonsService;
@@ -37,6 +38,7 @@ describe('RegistrationPigeonsService', () => {
       id: 'tournament-1',
       status: TournamentStatus.ACTIVE,
       doubleStampEnabled: false,
+      singleNominatedEnabled: false,
       totalPigeonsAllowed: 10,
     },
   };
@@ -51,6 +53,7 @@ describe('RegistrationPigeonsService', () => {
     color: 'Blue Bar',
     gender: PigeonSex.COCK,
     isDoubleStamp: false,
+    isSingleNominated: false,
     status: 'ACTIVE',
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-01-01'),

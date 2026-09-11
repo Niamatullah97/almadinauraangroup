@@ -24,6 +24,10 @@ export class TournamentsService {
   ) {}
 
   async create(createdById: string, dto: CreateTournamentDto) {
+    this.assertExclusiveNominatedModes(
+      dto.doubleStampEnabled ?? false,
+      dto.singleNominatedEnabled ?? false,
+    );
     const slug = await this.generateUniqueSlug(dto.title);
 
     const tournament = await this.prisma.tournament.create({
@@ -35,6 +39,7 @@ export class TournamentsService {
         entryFee: dto.entryFee,
         totalPigeonsAllowed: dto.totalPigeonsAllowed,
         doubleStampEnabled: dto.doubleStampEnabled ?? false,
+        singleNominatedEnabled: dto.singleNominatedEnabled ?? false,
         startDate: new Date(dto.startDate),
         endDate: new Date(dto.endDate),
         startTime: dto.startTime,
@@ -124,6 +129,24 @@ export class TournamentsService {
       throw new BadRequestException('End time must be after start time');
     }
 
+    const doubleStampEnabled =
+      dto.doubleStampEnabled !== undefined
+        ? dto.doubleStampEnabled
+        : dto.singleNominatedEnabled
+          ? false
+          : undefined;
+    const singleNominatedEnabled =
+      dto.singleNominatedEnabled !== undefined
+        ? dto.singleNominatedEnabled
+        : dto.doubleStampEnabled
+          ? false
+          : undefined;
+
+    this.assertExclusiveNominatedModes(
+      doubleStampEnabled ?? existing.doubleStampEnabled,
+      singleNominatedEnabled ?? existing.singleNominatedEnabled,
+    );
+
     const tournament = await this.prisma.tournament.update({
       where: { id: existing.id },
       data: {
@@ -137,8 +160,11 @@ export class TournamentsService {
         ...(dto.totalPigeonsAllowed !== undefined && {
           totalPigeonsAllowed: dto.totalPigeonsAllowed,
         }),
-        ...(dto.doubleStampEnabled !== undefined && {
-          doubleStampEnabled: dto.doubleStampEnabled,
+        ...(doubleStampEnabled !== undefined && {
+          doubleStampEnabled,
+        }),
+        ...(singleNominatedEnabled !== undefined && {
+          singleNominatedEnabled,
         }),
         ...(dto.startDate !== undefined && { startDate: new Date(dto.startDate) }),
         ...(dto.endDate !== undefined && { endDate: new Date(dto.endDate) }),
@@ -215,6 +241,17 @@ export class TournamentsService {
     return { startDate: 'desc' };
   }
 
+  private assertExclusiveNominatedModes(
+    doubleStampEnabled: boolean,
+    singleNominatedEnabled: boolean,
+  ): void {
+    if (doubleStampEnabled && singleNominatedEnabled) {
+      throw new BadRequestException(
+        'A tournament cannot enable both double stamp and single nominated pigeon',
+      );
+    }
+  }
+
   private mapTournament(tournament: Tournament) {
     return {
       id: tournament.id,
@@ -225,6 +262,7 @@ export class TournamentsService {
       entryFee: Number(tournament.entryFee),
       totalPigeonsAllowed: tournament.totalPigeonsAllowed,
       doubleStampEnabled: tournament.doubleStampEnabled,
+      singleNominatedEnabled: tournament.singleNominatedEnabled,
       startDate: tournament.startDate.toISOString().slice(0, 10),
       endDate: tournament.endDate.toISOString().slice(0, 10),
       startTime: tournament.startTime,

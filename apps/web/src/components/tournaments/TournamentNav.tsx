@@ -2,9 +2,10 @@ import Link from 'next/link';
 
 interface TournamentNavProps {
   tournamentId: string;
-  active: 'overview' | 'total' | 'double-stamp' | 'daily';
+  active: 'overview' | 'total' | 'double-stamp' | 'single-nominated' | 'daily';
   raceDayId?: string;
   doubleStampEnabled?: boolean;
+  singleNominatedEnabled?: boolean;
 }
 
 export function TournamentNav({
@@ -12,6 +13,7 @@ export function TournamentNav({
   active,
   raceDayId,
   doubleStampEnabled = false,
+  singleNominatedEnabled = false,
 }: TournamentNavProps) {
   const base = `/tournaments/${tournamentId}`;
 
@@ -38,6 +40,15 @@ export function TournamentNav({
           className={active === 'double-stamp' ? 'tab tab--active' : 'tab'}
         >
           Double stamp
+        </Link>
+      )}
+      {singleNominatedEnabled && (
+        <Link
+          href={`${base}/results/single-nominated`}
+          prefetch={false}
+          className={active === 'single-nominated' ? 'tab tab--active' : 'tab'}
+        >
+          Single nominated
         </Link>
       )}
       {raceDayId && (

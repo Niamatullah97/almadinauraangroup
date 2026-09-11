@@ -10,6 +10,7 @@ export interface RegistrationPigeonDto {
   color: string;
   gender: PigeonSex;
   isDoubleStamp: boolean;
+  isSingleNominated: boolean;
   status: PigeonStatus;
   createdAt: string;
   updatedAt: string;
@@ -28,6 +29,7 @@ export interface CreateRegistrationPigeonRequest {
   color: string;
   gender: PigeonSex;
   isDoubleStamp?: boolean;
+  isSingleNominated?: boolean;
   status?: PigeonStatus;
 }
 
@@ -37,6 +39,7 @@ export interface UpdateRegistrationPigeonRequest {
   color?: string;
   gender?: PigeonSex;
   isDoubleStamp?: boolean;
+  isSingleNominated?: boolean;
   status?: PigeonStatus;
 }
 

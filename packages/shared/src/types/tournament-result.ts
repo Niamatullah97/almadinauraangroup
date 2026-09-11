@@ -11,6 +11,7 @@ export interface ResultPigeonLandingInput {
   pigeonNumber: number;
   ringNumber: string;
   isDoubleStamp: boolean;
+  isSingleNominated?: boolean;
   landingTime: Date | null;
   calculatedDurationMs?: number | null;
   profileImage?: string | null;
@@ -36,6 +37,7 @@ export interface ResultPigeonRow {
   pigeonNumber: number;
   ringNumber: string;
   isDoubleStamp: boolean;
+  isSingleNominated?: boolean;
   isBrave: boolean;
   landingTimeMs: number | null;
   landingClockTime: string | null;
@@ -118,6 +120,7 @@ export interface TournamentResultPigeonInput {
   pigeonNumber: number;
   ringNumber: string;
   isDoubleStamp: boolean;
+  isSingleNominated?: boolean;
   profileImage?: string | null;
   landings: Array<{
     raceDayId: string;
@@ -135,3 +138,5 @@ export interface DoubleStampResultDto {
   bravePigeon: ResultWinner | null;
   rankings: ParticipantResultRow[];
 }
+
+export type NominatedPigeonResultDto = DoubleStampResultDto;
