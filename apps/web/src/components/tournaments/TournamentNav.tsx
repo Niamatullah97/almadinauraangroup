@@ -17,11 +17,16 @@ export function TournamentNav({
 
   return (
     <nav className="tabs" aria-label="Tournament sections">
-      <Link href={base} className={active === 'overview' ? 'tab tab--active' : 'tab'}>
+      <Link
+        href={base}
+        prefetch={false}
+        className={active === 'overview' ? 'tab tab--active' : 'tab'}
+      >
         Overview
       </Link>
       <Link
         href={`${base}/results/total`}
+        prefetch={false}
         className={active === 'total' ? 'tab tab--active' : 'tab'}
       >
         Total results
@@ -29,6 +34,7 @@ export function TournamentNav({
       {doubleStampEnabled && (
         <Link
           href={`${base}/results/double-stamp`}
+          prefetch={false}
           className={active === 'double-stamp' ? 'tab tab--active' : 'tab'}
         >
           Double stamp
@@ -37,6 +43,7 @@ export function TournamentNav({
       {raceDayId && (
         <Link
           href={`${base}/results/daily/${raceDayId}`}
+          prefetch={false}
           className={active === 'daily' ? 'tab tab--active' : 'tab'}
         >
           Daily results

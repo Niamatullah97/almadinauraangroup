@@ -33,11 +33,12 @@ describe('tournaments API', () => {
     );
   });
 
-  it('returns null when tournament detail fails', async () => {
+  it('returns null when tournament detail is missing', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
         ok: false,
+        status: 404,
       }),
     );
 

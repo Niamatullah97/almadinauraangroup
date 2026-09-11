@@ -1,9 +1,10 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { TournamentStatus } from '@prisma/client';
 
-import { TournamentsService } from './tournaments.service';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
 import { StorageService } from '../../../infrastructure/storage/storage.service';
+
+import { TournamentsService } from './tournaments.service';
 
 describe('TournamentsService', () => {
   let service: TournamentsService;
@@ -125,6 +126,23 @@ describe('TournamentsService', () => {
     it('throws when tournament is missing', async () => {
       prisma.tournament.findFirst.mockResolvedValue(null);
       await expect(service.findOne('missing')).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('looks up public slugs without querying the uuid column', async () => {
+      prisma.tournament.findFirst.mockResolvedValue({
+        ...tournamentRecord,
+        createdBy: { id: 'user-1', firstName: 'A', lastName: 'B', email: 'a@b.com' },
+        _count: { registrations: 0 },
+      });
+
+      const result = await service.findOne('abc-group');
+
+      expect(prisma.tournament.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { deletedAt: null, slug: 'abc-group' },
+        }),
+      );
+      expect(result.slug).toBe('spring-classic');
     });
   });
 

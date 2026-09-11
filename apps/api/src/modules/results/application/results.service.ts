@@ -12,6 +12,7 @@ import {
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { RaceWinnerCategory } from '@prisma/client';
 
+import { liveTournamentWhere } from '../../../common/utils/tournament-identity.util';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
 
 const WINNER_CATEGORIES = [
@@ -159,15 +160,16 @@ export class ResultsService {
     };
   }
 
-  private async buildTournamentInput(tournamentId: string): Promise<TournamentResultInput> {
+  private async buildTournamentInput(idOrSlug: string): Promise<TournamentResultInput> {
     const tournament = await this.prisma.tournament.findFirst({
-      where: { id: tournamentId, deletedAt: null },
+      where: liveTournamentWhere(idOrSlug),
     });
 
     if (!tournament) {
       throw new NotFoundException('Tournament not found');
     }
 
+    const tournamentId = tournament.id;
     const [raceDays, pigeons] = await Promise.all([
       this.prisma.raceDay.findMany({
         where: { tournamentId, deletedAt: null },

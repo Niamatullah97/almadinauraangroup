@@ -11,6 +11,11 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Cloudflare Workers have no Next.js image optimizer; routing /_next/image
+  // through the Worker also competes with SSR API fetches on small devices.
+  images: {
+    unoptimized: true,
+  },
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,

@@ -6,6 +6,7 @@ import {
 import { NotFoundException } from '@nestjs/common';
 
 import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
+
 import { ResultsService } from './results.service';
 
 const tournamentRecord = {
@@ -236,6 +237,26 @@ describe('ResultsService', () => {
     prisma.tournament.findFirst.mockResolvedValue(null);
 
     await expect(service.getTotalResults('missing')).rejects.toThrow(NotFoundException);
+  });
+
+  it('loads results when the customer site passes a tournament slug', async () => {
+    prisma.tournament.findFirst.mockResolvedValue({
+      ...tournamentRecord,
+      id: '3d929612-6d9b-4b61-99e1-0a573348473a',
+    });
+    prisma.raceDay.findMany.mockResolvedValue([]);
+    prisma.registrationPigeon.findMany.mockResolvedValue([]);
+
+    await service.getTotalResults('abc-group');
+
+    expect(prisma.tournament.findFirst).toHaveBeenCalledWith({
+      where: { deletedAt: null, slug: 'abc-group' },
+    });
+    expect(prisma.raceDay.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { tournamentId: '3d929612-6d9b-4b61-99e1-0a573348473a', deletedAt: null },
+      }),
+    );
   });
 });
 

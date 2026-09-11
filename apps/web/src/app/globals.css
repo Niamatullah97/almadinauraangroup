@@ -69,6 +69,7 @@ a {
   justify-content: space-between;
   gap: 1rem;
   padding: 1rem 1.25rem;
+  flex-wrap: wrap;
 }
 
 .logo {
@@ -86,6 +87,11 @@ a {
   height: 52px;
   border-radius: 0.35rem;
   object-fit: cover;
+  flex-shrink: 0;
+}
+
+.logo span {
+  line-height: 1.2;
 }
 
 nav {
@@ -152,9 +158,11 @@ nav a:hover {
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
   border-radius: var(--radius-sm);
+  font: inherit;
   font-weight: 600;
   text-decoration: none;
   border: 1px solid transparent;
+  cursor: pointer;
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease;
@@ -178,7 +186,7 @@ nav a:hover {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: 1.25rem;
 }
 
@@ -232,7 +240,7 @@ nav a:hover {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
   gap: 1rem;
 }
 
@@ -258,7 +266,7 @@ nav a:hover {
 
 .winners-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
   gap: 1rem;
   margin: 1.5rem 0;
 }
@@ -603,6 +611,10 @@ nav a:hover {
   border-radius: var(--radius-md);
 }
 
+.empty-state .btn {
+  margin-top: 1rem;
+}
+
 .footer {
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
@@ -653,13 +665,34 @@ nav a:hover {
 
 .contact-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
   gap: 1rem;
 }
 
 @media (max-width: 640px) {
   .container {
     padding: 1.25rem 1rem;
+  }
+
+  .header-inner {
+    padding: 0.75rem 1rem;
+  }
+
+  .logo {
+    font-size: 1rem;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .logo span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: min(46vw, 12rem);
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
   }
 
   nav {

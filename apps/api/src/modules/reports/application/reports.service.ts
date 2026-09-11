@@ -10,6 +10,7 @@ import {
 } from '@kabootar/shared';
 import { BadRequestException, Injectable, NotFoundException, StreamableFile } from '@nestjs/common';
 
+import { liveTournamentWhere } from '../../../common/utils/tournament-identity.util';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
 import { LandingTimesService } from '../../landing-times/application/landing-times.service';
 import { ResultsService } from '../../results/application/results.service';
@@ -157,7 +158,7 @@ export class ReportsService {
 
   async downloadParticipantListExcel(tournamentId: string): Promise<GeneratedReportFile> {
     const tournament = await this.getTournamentOrThrow(tournamentId);
-    const registrations = await this.getRegistrationsForReport(tournamentId);
+    const registrations = await this.getRegistrationsForReport(tournament.id);
 
     const rows = registrations.map((registration) => ({
       participantName: registration.participant.name,
@@ -183,7 +184,7 @@ export class ReportsService {
 
   async downloadPaymentReportExcel(tournamentId: string): Promise<GeneratedReportFile> {
     const tournament = await this.getTournamentOrThrow(tournamentId);
-    const registrations = await this.getRegistrationsForReport(tournamentId);
+    const registrations = await this.getRegistrationsForReport(tournament.id);
 
     const rows = registrations.map((registration) => {
       const totalFee = calculateRegistrationTotalFee(Number(registration.entryFeePerPigeon));
@@ -229,8 +230,8 @@ export class ReportsService {
   async downloadPrizeReportPdf(tournamentId: string): Promise<GeneratedReportFile> {
     const tournament = await this.getTournamentOrThrow(tournamentId);
     const [results, registrations] = await Promise.all([
-      this.resultsService.getTotalResults(tournamentId),
-      this.getRegistrationsForReport(tournamentId),
+      this.resultsService.getTotalResults(tournament.id),
+      this.getRegistrationsForReport(tournament.id),
     ]);
 
     const prizePool = registrations.reduce(
@@ -292,7 +293,7 @@ export class ReportsService {
 
   private async getTournamentOrThrow(tournamentId: string) {
     const tournament = await this.prisma.tournament.findFirst({
-      where: { id: tournamentId, deletedAt: null },
+      where: liveTournamentWhere(tournamentId),
     });
 
     if (!tournament) {

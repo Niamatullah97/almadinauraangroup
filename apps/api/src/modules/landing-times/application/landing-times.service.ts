@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { PigeonLandingTime, Prisma } from '@prisma/client';
 
+import { liveTournamentWhere } from '../../../common/utils/tournament-identity.util';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
 import { RegistrationPigeonsService } from '../../registration-pigeons/application/registration-pigeons.service';
 import { ResultsService } from '../../results/application/results.service';
@@ -336,7 +337,7 @@ export class LandingTimesService {
 
   private async getTournamentEntrySettings(tournamentId: string) {
     const tournament = await this.prisma.tournament.findFirst({
-      where: { id: tournamentId, deletedAt: null },
+      where: liveTournamentWhere(tournamentId),
       select: { doubleStampEnabled: true, totalPigeonsAllowed: true },
     });
 

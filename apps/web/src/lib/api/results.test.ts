@@ -52,8 +52,8 @@ describe('results API', () => {
     expect(results?.scope).toBe('total');
   });
 
-  it('returns null when daily results request fails', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network error')));
+  it('returns null when daily results are not found', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404 }));
 
     const results = await getDailyResults('t1', 'rd1');
     expect(results).toBeNull();

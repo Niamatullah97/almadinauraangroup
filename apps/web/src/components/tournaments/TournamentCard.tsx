@@ -7,6 +7,7 @@ import { formatCurrency, formatDate, formatStatus } from '@/lib/format';
 interface TournamentCardProps {
   tournament: {
     id: string;
+    slug?: string | null;
     title: string;
     city: string;
     entryFee: number;
@@ -19,6 +20,7 @@ interface TournamentCardProps {
 
 export function TournamentCard({ tournament }: TournamentCardProps) {
   const bannerUrl = resolveBannerUrl(tournament.bannerImage);
+  const href = `/tournaments/${tournament.slug || tournament.id}`;
   const statusClass =
     tournament.status === TournamentStatus.ACTIVE
       ? 'badge badge--active'
@@ -27,7 +29,7 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
         : 'badge badge--draft';
 
   return (
-    <Link href={`/tournaments/${tournament.id}`} className="card link-card">
+    <Link href={href} className="card link-card" prefetch={false}>
       {bannerUrl && (
         <img
           src={bannerUrl}

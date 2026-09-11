@@ -1,4 +1,11 @@
 import {
+  buildQuotaPigeonNumbers,
+  calculateRegistrationTotalFee,
+  deriveRegistrationPaymentStatus,
+  generateBulkRingNumber,
+  getNextPigeonNumber,
+} from '@kabootar/shared';
+import {
   BadRequestException,
   ConflictException,
   Injectable,
@@ -11,14 +18,8 @@ import {
   RegistrationPigeon,
   TournamentStatus,
 } from '@prisma/client';
-import {
-  buildQuotaPigeonNumbers,
-  calculateRegistrationTotalFee,
-  deriveRegistrationPaymentStatus,
-  generateBulkRingNumber,
-  getNextPigeonNumber,
-} from '@kabootar/shared';
 
+import { liveTournamentWhere } from '../../../common/utils/tournament-identity.util';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
 import { BulkGeneratePigeonsDto } from '../presentation/dto/bulk-generate-pigeons.dto';
 import { CreateRegistrationPigeonDto } from '../presentation/dto/create-registration-pigeon.dto';
@@ -228,8 +229,8 @@ export class RegistrationPigeonsService {
 
   async ensureQuotaSlots(tournamentId: string): Promise<void> {
     const tournament = await this.prisma.tournament.findFirst({
-      where: { id: tournamentId, deletedAt: null },
-      select: { totalPigeonsAllowed: true },
+      where: liveTournamentWhere(tournamentId),
+      select: { totalPigeonsAllowed: true, id: true },
     });
 
     if (!tournament) {
@@ -238,7 +239,7 @@ export class RegistrationPigeonsService {
 
     const quota = tournament.totalPigeonsAllowed;
     const registrations = await this.prisma.tournamentRegistration.findMany({
-      where: { tournamentId, deletedAt: null },
+      where: { tournamentId: tournament.id, deletedAt: null },
       include: {
         pigeons: {
           select: { id: true, pigeonNumber: true, deletedAt: true },
@@ -263,7 +264,9 @@ export class RegistrationPigeonsService {
 
     await this.prisma.$transaction(async (tx) => {
       for (const registration of registrationsNeedingSlots) {
-        const byNumber = new Map(registration.pigeons.map((pigeon) => [pigeon.pigeonNumber, pigeon]));
+        const byNumber = new Map(
+          registration.pigeons.map((pigeon) => [pigeon.pigeonNumber, pigeon]),
+        );
         let changed = false;
 
         for (const pigeonNumber of buildQuotaPigeonNumbers(quota)) {
@@ -418,15 +421,14 @@ export class RegistrationPigeonsService {
     });
 
     if (existing) {
-      throw new ConflictException('A pigeon with this ring number already exists in the tournament');
+      throw new ConflictException(
+        'A pigeon with this ring number already exists in the tournament',
+      );
     }
   }
 
   private handleUniqueViolation(error: unknown): void {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2002'
-    ) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       throw new ConflictException('Pigeon number or ring number already exists');
     }
   }
@@ -436,7 +438,10 @@ export class RegistrationPigeonsService {
     items: RegistrationPigeon[],
   ) {
     const registeredCount = items.length;
-    const remainingCount = Math.max(0, registration.tournament.totalPigeonsAllowed - registeredCount);
+    const remainingCount = Math.max(
+      0,
+      registration.tournament.totalPigeonsAllowed - registeredCount,
+    );
 
     return {
       items: items.map((item) => this.mapPigeon(item)),

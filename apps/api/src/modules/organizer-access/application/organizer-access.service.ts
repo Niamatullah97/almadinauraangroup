@@ -1,13 +1,4 @@
 import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
-import { TournamentAccessLink } from '@prisma/client';
-import {
   AccessLinkExpiryPreset,
   AuthTokenType,
   isAccessLinkExpired,
@@ -16,7 +7,17 @@ import {
   resolveAccessLinkExpiry,
   UserRole,
 } from '@kabootar/shared';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { TournamentAccessLink } from '@prisma/client';
 
+import { liveTournamentWhere } from '../../../common/utils/tournament-identity.util';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
 import { TournamentsService } from '../../tournaments/application/tournaments.service';
 import {
@@ -46,9 +47,7 @@ export class OrganizerAccessService {
         dto.expiryPreset === AccessLinkExpiryPreset.CUSTOM ? dto.expiresAt : undefined,
       );
     } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Invalid expiration',
-      );
+      throw new BadRequestException(error instanceof Error ? error.message : 'Invalid expiration');
     }
 
     if (expiresAt.getTime() <= Date.now()) {
@@ -134,10 +133,7 @@ export class OrganizerAccessService {
       data: { lastUsedAt: new Date() },
     });
 
-    const ttlSeconds = Math.max(
-      60,
-      Math.floor((link.expiresAt.getTime() - Date.now()) / 1000),
-    );
+    const ttlSeconds = Math.max(60, Math.floor((link.expiresAt.getTime() - Date.now()) / 1000));
 
     const payload: JwtPayload = {
       sub: link.id,
@@ -161,7 +157,7 @@ export class OrganizerAccessService {
 
   private async assertTournamentExists(tournamentId: string): Promise<void> {
     const tournament = await this.prisma.tournament.findFirst({
-      where: { id: tournamentId, deletedAt: null },
+      where: liveTournamentWhere(tournamentId),
       select: { id: true },
     });
 

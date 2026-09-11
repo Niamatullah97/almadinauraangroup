@@ -20,6 +20,7 @@ import {
   TournamentStatus,
 } from '@prisma/client';
 
+import { liveTournamentWhere } from '../../../common/utils/tournament-identity.util';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
 import { CreateRegistrationDto } from '../presentation/dto/create-registration.dto';
 import { RecordPaymentDto } from '../presentation/dto/record-payment.dto';
@@ -304,7 +305,7 @@ export class RegistrationsService {
 
   private async ensureTournamentExists(tournamentId: string) {
     const tournament = await this.prisma.tournament.findFirst({
-      where: { id: tournamentId, deletedAt: null },
+      where: liveTournamentWhere(tournamentId),
     });
 
     if (!tournament) {

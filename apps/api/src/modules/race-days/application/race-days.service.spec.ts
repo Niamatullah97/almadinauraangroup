@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, NotFoundException } from '@nest
 import { Prisma, RaceDayStatus, TournamentStatus } from '@prisma/client';
 
 import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
+
 import { RaceDaysService } from './race-days.service';
 
 describe('RaceDaysService', () => {
@@ -64,6 +65,25 @@ describe('RaceDaysService', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].raceDate).toBe('2026-04-02');
+    });
+
+    it('resolves a public slug to the tournament uuid before listing race days', async () => {
+      prisma.tournament.findFirst.mockResolvedValue({
+        ...tournament,
+        id: '3d929612-6d9b-4b61-99e1-0a573348473a',
+      });
+      prisma.raceDay.findMany.mockResolvedValue([raceDay]);
+
+      await service.findAllByTournament('abc-group');
+
+      expect(prisma.tournament.findFirst).toHaveBeenCalledWith({
+        where: { deletedAt: null, slug: 'abc-group' },
+      });
+      expect(prisma.raceDay.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { tournamentId: '3d929612-6d9b-4b61-99e1-0a573348473a', deletedAt: null },
+        }),
+      );
     });
   });
 

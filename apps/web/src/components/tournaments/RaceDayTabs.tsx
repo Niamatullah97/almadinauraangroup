@@ -24,6 +24,7 @@ export function RaceDayTabs({
         <Link
           key={day.id}
           href={`/tournaments/${tournamentId}/results/daily/${day.id}`}
+          prefetch={false}
           className={active === 'daily' && day.id === activeRaceDayId ? 'tab tab--active' : 'tab'}
         >
           {formatDate(day.raceDate)}
@@ -31,6 +32,7 @@ export function RaceDayTabs({
       ))}
       <Link
         href={`/tournaments/${tournamentId}/results/total`}
+        prefetch={false}
         className={active === 'total' ? 'tab tab--active' : 'tab'}
       >
         Total
@@ -38,6 +40,7 @@ export function RaceDayTabs({
       {doubleStampEnabled && (
         <Link
           href={`/tournaments/${tournamentId}/results/double-stamp`}
+          prefetch={false}
           className={active === 'double-stamp' ? 'tab tab--active' : 'tab'}
         >
           Double Stamp Total

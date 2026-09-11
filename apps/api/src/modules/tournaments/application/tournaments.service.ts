@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { Prisma, Tournament, TournamentStatus } from '@prisma/client';
 
 import { slugify } from '../../../common/utils/slug.util';
+import { liveTournamentWhere } from '../../../common/utils/tournament-identity.util';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
 import { StorageService } from '../../../infrastructure/storage/storage.service';
 import { CreateTournamentDto } from '../presentation/dto/create-tournament.dto';
@@ -87,9 +88,9 @@ export class TournamentsService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(idOrSlug: string) {
     const tournament = await this.prisma.tournament.findFirst({
-      where: { id, deletedAt: null },
+      where: liveTournamentWhere(idOrSlug),
       include: {
         createdBy: { select: { id: true, firstName: true, lastName: true, email: true } },
         _count: { select: { registrations: { where: { deletedAt: null } } } },
@@ -101,16 +102,7 @@ export class TournamentsService {
   }
 
   async findBySlug(slug: string) {
-    const tournament = await this.prisma.tournament.findFirst({
-      where: { slug, deletedAt: null },
-      include: {
-        createdBy: { select: { id: true, firstName: true, lastName: true, email: true } },
-        _count: { select: { registrations: { where: { deletedAt: null } } } },
-      },
-    });
-
-    if (!tournament) throw new NotFoundException('Tournament not found');
-    return this.mapTournamentDetail(tournament);
+    return this.findOne(slug);
   }
 
   async update(id: string, dto: UpdateTournamentDto) {
@@ -133,10 +125,12 @@ export class TournamentsService {
     }
 
     const tournament = await this.prisma.tournament.update({
-      where: { id },
+      where: { id: existing.id },
       data: {
         ...(dto.title !== undefined && { title: dto.title }),
-        ...(dto.title !== undefined && { slug: await this.generateUniqueSlug(dto.title, id) }),
+        ...(dto.title !== undefined && {
+          slug: await this.generateUniqueSlug(dto.title, existing.id),
+        }),
         ...(dto.description !== undefined && { description: dto.description }),
         ...(dto.city !== undefined && { city: dto.city }),
         ...(dto.entryFee !== undefined && { entryFee: dto.entryFee }),
@@ -162,10 +156,10 @@ export class TournamentsService {
   }
 
   async remove(id: string) {
-    await this.findOne(id);
+    const existing = await this.findOne(id);
 
     const tournament = await this.prisma.tournament.update({
-      where: { id },
+      where: { id: existing.id },
       data: {
         deletedAt: new Date(),
         status: TournamentStatus.CANCELLED,
@@ -184,7 +178,7 @@ export class TournamentsService {
     }
 
     const tournament = await this.prisma.tournament.update({
-      where: { id },
+      where: { id: existing.id },
       data: { bannerImage },
     });
 

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Prisma, RaceDay, RaceDayStatus, TournamentStatus } from '@prisma/client';
 
+import { liveTournamentWhere } from '../../../common/utils/tournament-identity.util';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.module';
 import { ResultsService } from '../../results/application/results.service';
 import { CreateRaceDayDto } from '../presentation/dto/create-race-day.dto';
@@ -24,10 +25,10 @@ export class RaceDaysService {
   ) {}
 
   async findAllByTournament(tournamentId: string) {
-    await this.ensureTournamentExists(tournamentId);
+    const tournament = await this.ensureTournamentExists(tournamentId);
 
     const items = await this.prisma.raceDay.findMany({
-      where: { tournamentId, deletedAt: null },
+      where: { tournamentId: tournament.id, deletedAt: null },
       orderBy: { raceDate: 'asc' },
     });
 
@@ -35,7 +36,8 @@ export class RaceDaysService {
   }
 
   async findOne(tournamentId: string, id: string) {
-    const raceDay = await this.getRaceDayOrThrow(tournamentId, id);
+    const tournament = await this.ensureTournamentExists(tournamentId);
+    const raceDay = await this.getRaceDayOrThrow(tournament.id, id);
     return this.mapRaceDay(raceDay);
   }
 
@@ -43,12 +45,12 @@ export class RaceDaysService {
     const tournament = await this.getTournamentForMutation(tournamentId);
     this.assertRaceDateInRange(dto.raceDate, tournament.startDate, tournament.endDate);
     this.assertValidTimeWindow(dto.releaseTime, dto.endTime);
-    await this.assertUniqueRaceDate(tournamentId, dto.raceDate);
+    await this.assertUniqueRaceDate(tournament.id, dto.raceDate);
 
     try {
       const raceDay = await this.prisma.raceDay.create({
         data: {
-          tournamentId,
+          tournamentId: tournament.id,
           raceDate: new Date(dto.raceDate),
           releaseTime: dto.releaseTime,
           endTime: dto.endTime,
@@ -67,7 +69,7 @@ export class RaceDaysService {
 
   async update(tournamentId: string, id: string, dto: UpdateRaceDayDto) {
     const tournament = await this.getTournamentForMutation(tournamentId);
-    const existing = await this.getRaceDayOrThrow(tournamentId, id);
+    const existing = await this.getRaceDayOrThrow(tournament.id, id);
     this.assertValidTimeWindow(
       dto.releaseTime ?? existing.releaseTime,
       dto.endTime ?? existing.endTime,
@@ -76,7 +78,7 @@ export class RaceDaysService {
     if (dto.raceDate) {
       this.assertRaceDateInRange(dto.raceDate, tournament.startDate, tournament.endDate);
       if (this.toDateKey(dto.raceDate) !== this.toDateKey(existing.raceDate)) {
-        await this.assertUniqueRaceDate(tournamentId, dto.raceDate, id);
+        await this.assertUniqueRaceDate(tournament.id, dto.raceDate, id);
       }
     }
 
@@ -94,7 +96,7 @@ export class RaceDaysService {
       });
 
       if (raceDay.status === RaceDayStatus.LIVE || raceDay.status === RaceDayStatus.COMPLETED) {
-        await this.resultsService.persistRaceDayWinners(tournamentId, id);
+        await this.resultsService.persistRaceDayWinners(tournament.id, id);
       }
 
       return this.mapRaceDay(raceDay);
@@ -105,8 +107,8 @@ export class RaceDaysService {
   }
 
   async remove(tournamentId: string, id: string) {
-    await this.getTournamentForMutation(tournamentId);
-    await this.getRaceDayOrThrow(tournamentId, id);
+    const tournament = await this.getTournamentForMutation(tournamentId);
+    await this.getRaceDayOrThrow(tournament.id, id);
 
     const raceDay = await this.prisma.raceDay.update({
       where: { id },
@@ -116,9 +118,9 @@ export class RaceDaysService {
     return this.mapRaceDay(raceDay);
   }
 
-  private async ensureTournamentExists(tournamentId: string) {
+  private async ensureTournamentExists(idOrSlug: string) {
     const tournament = await this.prisma.tournament.findFirst({
-      where: { id: tournamentId, deletedAt: null },
+      where: liveTournamentWhere(idOrSlug),
     });
 
     if (!tournament) {
