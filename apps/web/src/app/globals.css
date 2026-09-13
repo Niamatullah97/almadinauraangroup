@@ -448,13 +448,6 @@ nav a:hover {
   font-size: 0.8125rem;
 }
 
-.timetable-flying {
-  color: #dc2626;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  margin-top: 0.2rem;
-}
-
 .timetable-time {
   font-variant-numeric: tabular-nums;
 }
@@ -506,13 +499,6 @@ nav a:hover {
 
 .result-name {
   font-weight: 700;
-}
-
-.flying-time {
-  margin-top: 0.2rem;
-  color: #dc2626;
-  font-size: 0.8125rem;
-  font-weight: 600;
 }
 
 .double-stamp-badge {

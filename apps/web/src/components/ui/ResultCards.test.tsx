@@ -111,7 +111,7 @@ describe('ResultCards', () => {
     expect(screen.getByText('00:07:30')).toBeInTheDocument();
     expect(screen.getByText('Double stamp')).toBeInTheDocument();
     expect(screen.getByText('Bravery')).toBeInTheDocument();
-    expect(screen.getByText('Flying time 05:45')).toBeInTheDocument();
+    expect(screen.queryByText(/Flying time/)).not.toBeInTheDocument();
   });
 
   it('shows a single Pigeon column with landing time in double stamp view', () => {

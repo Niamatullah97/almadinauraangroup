@@ -213,13 +213,6 @@ export function RankingTable({
                 </td>
                 <td>
                   <div className="timetable-name">{row.participantName}</div>
-                  {!singleColumnView &&
-                    row.currentFlyingTimeMs !== null &&
-                    row.remainingPigeons > 0 && (
-                      <div className="timetable-flying">
-                        Flying time {formatClockDuration(row.currentFlyingTimeMs, false)}
-                      </div>
-                    )}
                 </td>
                 {singleColumnView ? (
                   <td className="timetable-time">
