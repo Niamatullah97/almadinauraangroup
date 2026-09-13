@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { getTournament, getTournaments, loadTournamentList } from '@/lib/api/tournaments';
+import {
+  getTournament,
+  getTournaments,
+  loadTournament,
+  loadTournamentList,
+} from '@/lib/api/tournaments';
 
 describe('tournaments API', () => {
   afterEach(() => {
@@ -57,6 +62,21 @@ describe('tournaments API', () => {
 
     await expect(loadTournamentList()).resolves.toEqual({
       tournaments: [],
+      unavailable: true,
+    });
+  });
+
+  it('marks tournament detail unavailable when the API is down', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+      }),
+    );
+
+    await expect(loadTournament('t1')).resolves.toEqual({
+      tournament: null,
       unavailable: true,
     });
   });

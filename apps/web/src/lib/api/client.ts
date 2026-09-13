@@ -2,9 +2,10 @@ import { ApiResponse } from '@kabootar/shared';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
 const MAX_ATTEMPTS = 2;
-const REQUEST_TIMEOUT_MS = 4000;
+const REQUEST_TIMEOUT_MS = 20_000;
+const TIMEOUT_MESSAGE = 'API request timed out';
 const RETRY_BASE_MS = process.env.VITEST ? 0 : 200;
-const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
+const RETRYABLE_STATUS = new Set([425, 429, 500, 502, 503, 504]);
 
 export class ApiRequestError extends Error {
   constructor(
@@ -75,6 +76,9 @@ async function fetchApiOnce<T>(path: string, init?: RequestInit): Promise<T | nu
     if (error instanceof ApiRequestError) {
       throw error;
     }
+    if (controller.signal.aborted && !init?.signal?.aborted) {
+      throw new ApiRequestError(TIMEOUT_MESSAGE);
+    }
     throw new ApiRequestError(error instanceof Error ? error.message : 'API request failed');
   } finally {
     clearTimeout(timeout);
@@ -84,6 +88,9 @@ async function fetchApiOnce<T>(path: string, init?: RequestInit): Promise<T | nu
 function isRetryable(error: unknown): boolean {
   if (!(error instanceof ApiRequestError)) {
     return true;
+  }
+  if (error.message === TIMEOUT_MESSAGE) {
+    return false;
   }
   // Aborts and network failures have no HTTP status; retry those too.
   if (error.status === undefined) {

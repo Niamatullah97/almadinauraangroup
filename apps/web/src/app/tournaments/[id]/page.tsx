@@ -2,11 +2,11 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { TournamentNav } from '@/components/tournaments/TournamentNav';
+import { LoadFailed } from '@/components/ui/LoadFailed';
 import { ResultSummary, TournamentBanner } from '@/components/ui/ResultCards';
 import { ShareButton } from '@/components/ui/ShareButton';
-import { getRaceDays } from '@/lib/api/race-days';
 import { getTotalResults } from '@/lib/api/results';
-import { getTournament } from '@/lib/api/tournaments';
+import { loadTournament, loadTournamentContext } from '@/lib/api/tournaments';
 import { resolveBannerUrl } from '@/lib/config';
 import { countParticipantLofts, formatCurrency, formatDate, formatStatus } from '@/lib/format';
 import { buildPageMetadata } from '@/lib/seo';
@@ -19,7 +19,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props) {
   const { id } = await params;
-  const tournament = await getTournament(id);
+  const { tournament } = await loadTournament(id);
 
   if (!tournament) {
     return buildPageMetadata({ title: 'Tournament not found' });
@@ -34,11 +34,18 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function TournamentDetailPage({ params }: Props) {
   const { id } = await params;
-  const [tournament, results, raceDays] = await Promise.all([
-    getTournament(id),
+  const [{ tournament, raceDays, unavailable }, results] = await Promise.all([
+    loadTournamentContext(id),
     getTotalResults(id),
-    getRaceDays(id),
   ]);
+
+  if (unavailable) {
+    return (
+      <div className="container">
+        <LoadFailed retryHref={`/tournaments/${id}`} />
+      </div>
+    );
+  }
 
   if (!tournament) notFound();
 

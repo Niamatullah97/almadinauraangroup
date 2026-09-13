@@ -58,4 +58,10 @@ describe('results API', () => {
     const results = await getDailyResults('t1', 'rd1');
     expect(results).toBeNull();
   });
+
+  it('returns null when results requests fail', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 503 }));
+
+    await expect(getTotalResults('t1')).resolves.toBeNull();
+  });
 });

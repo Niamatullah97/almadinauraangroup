@@ -2,34 +2,46 @@ import { DailyResultDto, DoubleStampResultDto, TotalResultDto } from '@kabootar/
 
 import { fetchApi } from './client';
 
+async function fetchResults<T>(path: string): Promise<T | null> {
+  try {
+    return await fetchApi<T>(path);
+  } catch {
+    return null;
+  }
+}
+
 export async function getTotalResults(tournamentId: string): Promise<TotalResultDto | null> {
-  return fetchApi<TotalResultDto>(`/tournaments/${tournamentId}/results`);
+  return fetchResults<TotalResultDto>(`/tournaments/${tournamentId}/results`);
 }
 
 export async function getTotalDoubleStampResults(
   tournamentId: string,
 ): Promise<DoubleStampResultDto | null> {
-  return fetchApi<DoubleStampResultDto>(`/tournaments/${tournamentId}/results/double-stamp`);
+  return fetchResults<DoubleStampResultDto>(`/tournaments/${tournamentId}/results/double-stamp`);
 }
 
 export async function getTotalSingleNominatedResults(
   tournamentId: string,
 ): Promise<DoubleStampResultDto | null> {
-  return fetchApi<DoubleStampResultDto>(`/tournaments/${tournamentId}/results/single-nominated`);
+  return fetchResults<DoubleStampResultDto>(
+    `/tournaments/${tournamentId}/results/single-nominated`,
+  );
 }
 
 export async function getDailyResults(
   tournamentId: string,
   raceDayId: string,
 ): Promise<DailyResultDto | null> {
-  return fetchApi<DailyResultDto>(`/tournaments/${tournamentId}/race-days/${raceDayId}/results`);
+  return fetchResults<DailyResultDto>(
+    `/tournaments/${tournamentId}/race-days/${raceDayId}/results`,
+  );
 }
 
 export async function getDailyDoubleStampResults(
   tournamentId: string,
   raceDayId: string,
 ): Promise<DoubleStampResultDto | null> {
-  return fetchApi<DoubleStampResultDto>(
+  return fetchResults<DoubleStampResultDto>(
     `/tournaments/${tournamentId}/race-days/${raceDayId}/results/double-stamp`,
   );
 }

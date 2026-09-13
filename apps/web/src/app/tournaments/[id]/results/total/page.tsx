@@ -2,10 +2,10 @@ import { notFound } from 'next/navigation';
 
 import { ResultPageContent } from '@/components/results/ResultPageContent';
 import { RaceDayTabs } from '@/components/tournaments/RaceDayTabs';
+import { LoadFailed } from '@/components/ui/LoadFailed';
 import { TournamentTotalTable } from '@/components/ui/ResultCards';
-import { getRaceDays } from '@/lib/api/race-days';
 import { getDailyResults, getTotalResults } from '@/lib/api/results';
-import { getTournament } from '@/lib/api/tournaments';
+import { loadTournament, loadTournamentContext } from '@/lib/api/tournaments';
 import { countParticipantLofts, formatDate } from '@/lib/format';
 import { buildPageMetadata } from '@/lib/seo';
 
@@ -17,7 +17,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props) {
   const { id } = await params;
-  const tournament = await getTournament(id);
+  const { tournament } = await loadTournament(id);
 
   if (!tournament) {
     return buildPageMetadata({ title: 'Results not found' });
@@ -32,11 +32,18 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function TotalResultsPage({ params }: Props) {
   const { id } = await params;
-  const [tournament, results, raceDays] = await Promise.all([
-    getTournament(id),
+  const [{ tournament, raceDays, unavailable }, results] = await Promise.all([
+    loadTournamentContext(id),
     getTotalResults(id),
-    getRaceDays(id),
   ]);
+
+  if (unavailable) {
+    return (
+      <div className="container" style={{ maxWidth: 1400 }}>
+        <LoadFailed retryHref={`/tournaments/${id}/results/total`} />
+      </div>
+    );
+  }
 
   if (!tournament) notFound();
   const dailyResults = await Promise.all(

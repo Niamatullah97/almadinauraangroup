@@ -5,6 +5,7 @@ import { ApiRequestError, fetchApi } from './client';
 describe('fetchApi', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   it('returns null for an actual 404 without retrying', async () => {
@@ -68,6 +69,30 @@ describe('fetchApi', () => {
 
     expect(first).toEqual({ id: 't1' });
     expect(second).toEqual({ id: 't1' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not retry timed-out requests', async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn((_url: string, init?: RequestInit) => {
+      return new Promise((_resolve, reject) => {
+        const onAbort = () => {
+          reject(Object.assign(new Error('The operation was aborted'), { name: 'AbortError' }));
+        };
+        if (init?.signal?.aborted) {
+          onAbort();
+          return;
+        }
+        init?.signal?.addEventListener('abort', onAbort, { once: true });
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const pending = fetchApi('/tournaments');
+    pending.catch(() => undefined);
+    await vi.advanceTimersByTimeAsync(20_000);
+
+    await expect(pending).rejects.toMatchObject({ message: 'API request timed out' });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
