@@ -124,7 +124,7 @@ describe('tournament-result calculations', () => {
   });
 
   describe('daily ranking', () => {
-    it('ranks participants by sequential cumulative time ascending', () => {
+    it('ranks participants by total flying time descending', () => {
       const pigeons = [
         pigeon('p1', 'participant-a', 'Ahmed', 'Sky Loft', 1, landingAt(8, 0)),
         pigeon('p2', 'participant-a', 'Ahmed', 'Sky Loft', 2, landingAt(8, 30)),
@@ -133,9 +133,9 @@ describe('tournament-result calculations', () => {
 
       const result = calculateDailyResults(RACE_DAY, pigeons, WINDOW, NOW);
 
-      expect(result.rankings[0].participantId).toBe('participant-b');
+      expect(result.rankings[0].participantId).toBe('participant-a');
       expect(result.rankings[0].rank).toBe(1);
-      expect(result.rankings[1].participantId).toBe('participant-a');
+      expect(result.rankings[1].participantId).toBe('participant-b');
       expect(result.rankings[1].rank).toBe(2);
     });
 
@@ -164,9 +164,10 @@ describe('tournament-result calculations', () => {
 
       const result = calculateDailyResults(RACE_DAY, pigeons, WINDOW, NOW);
 
+      expect(result.rankings[0].participantId).toBe('participant-c');
       expect(result.rankings[0].rank).toBe(1);
-      expect(result.rankings[1].rank).toBe(1);
-      expect(result.rankings[2].rank).toBe(3);
+      expect(result.rankings[1].rank).toBe(2);
+      expect(result.rankings[2].rank).toBe(2);
     });
 
     it('handles partial landing and remaining pigeons', () => {
@@ -343,7 +344,7 @@ describe('tournament-result calculations', () => {
       const result = calculateSingleNominatedResults('daily', pigeons, WINDOW, RACE_DAY);
 
       expect(result.rankings).toHaveLength(2);
-      expect(result.rankings[0].participantId).toBe('participant-b');
+      expect(result.rankings[0].participantId).toBe('participant-a');
     });
 
     it('calculates daily double stamp ranking separately', () => {
@@ -356,7 +357,7 @@ describe('tournament-result calculations', () => {
       const result = calculateDoubleStampResults('daily', pigeons, WINDOW, RACE_DAY);
 
       expect(result.rankings).toHaveLength(2);
-      expect(result.rankings[0].participantId).toBe('participant-b');
+      expect(result.rankings[0].participantId).toBe('participant-a');
     });
 
     it('picks last winner from each loft’s last double stamp pigeon', () => {
@@ -427,7 +428,7 @@ describe('tournament-result calculations', () => {
       expect(result.raceDayCount).toBe(2);
       expect(result.summary.totalPigeons).toBe(2);
       expect(result.summary.landedPigeons).toBe(2);
-      expect(result.rankings[0].participantId).toBe('participant-b');
+      expect(result.rankings[0].participantId).toBe('participant-a');
       expect(
         result.rankings.find((row) => row.participantId === 'participant-a')?.totalLandingTimeMs,
       ).toBe((3 * 60 + 15) * 60 * 1000);
@@ -469,6 +470,40 @@ describe('tournament-result calculations', () => {
   });
 
   describe('assignCompetitionRanks', () => {
+    it('gives rank 1 to the loft with the highest total hours', () => {
+      const ranked = assignCompetitionRanks([
+        {
+          participantId: 'short',
+          participantName: 'Short',
+          loftName: 'Short Loft',
+          totalPigeons: 1,
+          landedPigeons: 1,
+          remainingPigeons: 0,
+          totalLandingTimeMs: 1000,
+          averageLandingTimeMs: 1000,
+          currentFlyingTimeMs: null,
+          pigeons: [],
+        },
+        {
+          participantId: 'long',
+          participantName: 'Long',
+          loftName: 'Long Loft',
+          totalPigeons: 1,
+          landedPigeons: 1,
+          remainingPigeons: 0,
+          totalLandingTimeMs: 5000,
+          averageLandingTimeMs: 5000,
+          currentFlyingTimeMs: null,
+          pigeons: [],
+        },
+      ]);
+
+      expect(ranked[0].participantId).toBe('long');
+      expect(ranked[0].rank).toBe(1);
+      expect(ranked[1].participantId).toBe('short');
+      expect(ranked[1].rank).toBe(2);
+    });
+
     it('keeps unranked participants at the bottom', () => {
       const ranked = assignCompetitionRanks([
         {

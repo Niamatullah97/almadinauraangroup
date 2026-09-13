@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, inject, input, signal } from '@angular/core';
+import { Component, OnInit, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   LandingTimeEntrySheetResponse,
@@ -6,7 +6,6 @@ import {
   RaceDayDto,
   TournamentDto,
   clockTimeToSeconds,
-  combineDateAndClockTime,
   formatClockHms,
   formatTypedClockTime,
   normalizeLandingTimeInput,
@@ -136,12 +135,6 @@ interface ParticipantEntryRow {
             1–{{ entrySheet()!.pigeonCount }}
           </p>
         }
-
-        @if (requireLiveRaceDay() && entrySheet() && !canEnterTimes()) {
-          <p class="form-error">
-            Landing times can be entered between the race start and end time.
-          </p>
-        }
       </div>
 
       <div class="table-card landing-entry__sheet">
@@ -266,14 +259,13 @@ interface ParticipantEntryRow {
     './landing-time-entry.component.scss',
   ],
 })
-export class LandingTimeEntryComponent implements OnInit, OnDestroy {
+export class LandingTimeEntryComponent implements OnInit {
   private readonly tournamentService = inject(TournamentService);
   private readonly raceDayService = inject(RaceDayService);
   private readonly landingTimeService = inject(LandingTimeService);
   private readonly participantService = inject(ParticipantService);
 
   readonly lockedTournamentId = input<string | null>(null);
-  readonly requireLiveRaceDay = input(false);
 
   readonly statusLabels = RACE_DAY_STATUS_LABELS;
 
@@ -290,14 +282,10 @@ export class LandingTimeEntryComponent implements OnInit, OnDestroy {
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
   readonly saveMessage = signal<string | null>(null);
-  private readonly currentTime = signal(Date.now());
-  private clockTimer: ReturnType<typeof setInterval> | null = null;
 
   autoSave = true;
 
   ngOnInit(): void {
-    this.clockTimer = setInterval(() => this.currentTime.set(Date.now()), 1000);
-
     const lockedId = this.lockedTournamentId();
     if (lockedId) {
       this.onTournamentChange(lockedId);
@@ -308,12 +296,6 @@ export class LandingTimeEntryComponent implements OnInit, OnDestroy {
       next: (response) => this.tournaments.set(response.items),
       error: () => this.error.set('Unable to load tournaments.'),
     });
-  }
-
-  ngOnDestroy(): void {
-    if (this.clockTimer) {
-      clearInterval(this.clockTimer);
-    }
   }
 
   onTournamentChange(tournamentId: string): void {
@@ -351,14 +333,7 @@ export class LandingTimeEntryComponent implements OnInit, OnDestroy {
   }
 
   canEnterTimes(): boolean {
-    const sheet = this.entrySheet();
-    if (!sheet) return false;
-    if (!this.requireLiveRaceDay()) return true;
-
-    const startsAt = combineDateAndClockTime(sheet.raceDate, sheet.releaseTime);
-    const endsAt = combineDateAndClockTime(sheet.raceDate, sheet.endTime);
-    const now = this.currentTime();
-    return now >= startsAt.getTime() && now <= endsAt.getTime();
+    return !!this.entrySheet();
   }
 
   doubleStampEnabled(): boolean {

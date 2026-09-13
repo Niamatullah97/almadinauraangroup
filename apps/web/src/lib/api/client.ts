@@ -2,7 +2,7 @@ import { ApiResponse } from '@kabootar/shared';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
 const MAX_ATTEMPTS = 2;
-const REQUEST_TIMEOUT_MS = 20_000;
+const REQUEST_TIMEOUT_MS = 12_000;
 const TIMEOUT_MESSAGE = 'API request timed out';
 const RETRY_BASE_MS = process.env.VITEST ? 0 : 200;
 const RETRYABLE_STATUS = new Set([425, 429, 500, 502, 503, 504]);
@@ -17,9 +17,13 @@ export class ApiRequestError extends Error {
   }
 }
 
+export type FetchApiOptions = RequestInit & {
+  cacheSeconds?: number;
+};
+
 const inflight = new Map<string, Promise<unknown>>();
 
-export async function fetchApi<T>(path: string, init?: RequestInit): Promise<T | null> {
+export async function fetchApi<T>(path: string, init?: FetchApiOptions): Promise<T | null> {
   const key = `${init?.method ?? 'GET'}:${path}`;
   const existing = inflight.get(key);
   if (existing) {
@@ -33,7 +37,7 @@ export async function fetchApi<T>(path: string, init?: RequestInit): Promise<T |
   return request;
 }
 
-async function fetchApiWithRetry<T>(path: string, init?: RequestInit): Promise<T | null> {
+async function fetchApiWithRetry<T>(path: string, init?: FetchApiOptions): Promise<T | null> {
   let lastError: unknown;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
@@ -51,16 +55,27 @@ async function fetchApiWithRetry<T>(path: string, init?: RequestInit): Promise<T
   throw lastError instanceof Error ? lastError : new ApiRequestError('Request failed');
 }
 
-async function fetchApiOnce<T>(path: string, init?: RequestInit): Promise<T | null> {
+async function fetchApiOnce<T>(path: string, init?: FetchApiOptions): Promise<T | null> {
+  const { cacheSeconds, ...requestInit } = init ?? {};
+  const cacheable = (requestInit.method ?? 'GET') === 'GET' && (cacheSeconds ?? 0) > 0;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const res = await fetch(`${API_URL}${path}`, {
-      ...init,
-      cache: 'no-store',
-      signal: init?.signal ?? controller.signal,
-    });
+    const fetchInit: RequestInit = {
+      ...requestInit,
+      cache: cacheable ? 'force-cache' : 'no-store',
+      signal: requestInit.signal ?? controller.signal,
+    };
+
+    if (cacheable && cacheSeconds) {
+      Object.assign(fetchInit, {
+        next: { revalidate: cacheSeconds },
+        cf: { cacheTtl: cacheSeconds, cacheEverything: true },
+      });
+    }
+
+    const res = await fetch(`${API_URL}${path}`, fetchInit);
 
     if (res.status === 404) {
       return null;
@@ -76,7 +91,7 @@ async function fetchApiOnce<T>(path: string, init?: RequestInit): Promise<T | nu
     if (error instanceof ApiRequestError) {
       throw error;
     }
-    if (controller.signal.aborted && !init?.signal?.aborted) {
+    if (controller.signal.aborted && !requestInit.signal?.aborted) {
       throw new ApiRequestError(TIMEOUT_MESSAGE);
     }
     throw new ApiRequestError(error instanceof Error ? error.message : 'API request failed');

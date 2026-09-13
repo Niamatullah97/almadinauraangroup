@@ -1,19 +1,10 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Permission, UserRole } from '@kabootar/shared';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { JwtPayload, Permission, UserRole } from '@kabootar/shared';
 
-import { GetUser } from '../../../common/decorators/get-user.decorator';
 import { Permissions, Public, Roles } from '../../../common/decorators/auth.decorators';
 import { LandingTimesService } from '../application/landing-times.service';
+
 import { BulkSaveLandingTimesDto } from './dto/bulk-save-landing-times.dto';
 import { CreateLandingTimeDto } from './dto/create-landing-time.dto';
 import { UpdateLandingTimeDto } from './dto/update-landing-time.dto';
@@ -49,10 +40,9 @@ export class LandingTimesController {
   create(
     @Param('tournamentId') tournamentId: string,
     @Param('raceDayId') raceDayId: string,
-    @GetUser() user: JwtPayload,
     @Body() dto: CreateLandingTimeDto,
   ) {
-    return this.landingTimesService.create(tournamentId, raceDayId, dto, user);
+    return this.landingTimesService.create(tournamentId, raceDayId, dto);
   }
 
   @Post('bulk')
@@ -61,10 +51,9 @@ export class LandingTimesController {
   bulkSave(
     @Param('tournamentId') tournamentId: string,
     @Param('raceDayId') raceDayId: string,
-    @GetUser() user: JwtPayload,
     @Body() dto: BulkSaveLandingTimesDto,
   ) {
-    return this.landingTimesService.bulkSave(tournamentId, raceDayId, dto, user);
+    return this.landingTimesService.bulkSave(tournamentId, raceDayId, dto);
   }
 
   @Patch(':id')
@@ -74,10 +63,9 @@ export class LandingTimesController {
     @Param('tournamentId') tournamentId: string,
     @Param('raceDayId') raceDayId: string,
     @Param('id') id: string,
-    @GetUser() user: JwtPayload,
     @Body() dto: UpdateLandingTimeDto,
   ) {
-    return this.landingTimesService.update(tournamentId, raceDayId, id, dto, user);
+    return this.landingTimesService.update(tournamentId, raceDayId, id, dto);
   }
 
   @Delete(':id')
@@ -88,8 +76,7 @@ export class LandingTimesController {
     @Param('tournamentId') tournamentId: string,
     @Param('raceDayId') raceDayId: string,
     @Param('id') id: string,
-    @GetUser() user: JwtPayload,
   ) {
-    return this.landingTimesService.remove(tournamentId, raceDayId, id, user);
+    return this.landingTimesService.remove(tournamentId, raceDayId, id);
   }
 }

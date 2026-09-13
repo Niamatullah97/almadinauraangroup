@@ -220,6 +220,7 @@ export function aggregateParticipantResults(
   });
 }
 
+/** Rank 1 is the loft with the highest total flying time. */
 export function assignCompetitionRanks(
   participants: Omit<ParticipantResultRow, 'rank'>[],
 ): ParticipantResultRow[] {
@@ -227,7 +228,7 @@ export function assignCompetitionRanks(
     .filter((participant) => participant.landedPigeons > 0)
     .sort((a, b) => {
       if (a.totalLandingTimeMs !== b.totalLandingTimeMs) {
-        return a.totalLandingTimeMs - b.totalLandingTimeMs;
+        return b.totalLandingTimeMs - a.totalLandingTimeMs;
       }
       return a.participantId.localeCompare(b.participantId);
     });

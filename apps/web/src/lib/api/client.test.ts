@@ -90,7 +90,7 @@ describe('fetchApi', () => {
 
     const pending = fetchApi('/tournaments');
     pending.catch(() => undefined);
-    await vi.advanceTimersByTimeAsync(20_000);
+    await vi.advanceTimersByTimeAsync(12_000);
 
     await expect(pending).rejects.toMatchObject({ message: 'API request timed out' });
     expect(fetchMock).toHaveBeenCalledTimes(1);

@@ -7,9 +7,15 @@ import {
 
 import { fetchApi } from './client';
 import { getRaceDays } from './race-days';
+import { readFallback, rememberSuccess } from './response-cache';
+
+const LIST_CACHE_KEY = 'tournaments:list';
+const LIST_CACHE_SECONDS = 30;
 
 export async function getTournaments(): Promise<TournamentDto[]> {
-  const data = await fetchApi<TournamentListResponse>('/tournaments?limit=100');
+  const data = await fetchApi<TournamentListResponse>('/tournaments?limit=100', {
+    cacheSeconds: LIST_CACHE_SECONDS,
+  });
   return data?.items ?? [];
 }
 
@@ -19,23 +25,38 @@ export async function loadTournamentList(): Promise<{
   unavailable: boolean;
 }> {
   try {
-    return { tournaments: await getTournaments(), unavailable: false };
+    const tournaments = await getTournaments();
+    await rememberSuccess(LIST_CACHE_KEY, tournaments);
+    return { tournaments, unavailable: false };
   } catch {
+    const cached = await readFallback<TournamentDto[]>(LIST_CACHE_KEY);
+    if (cached) {
+      return { tournaments: cached, unavailable: false };
+    }
     return { tournaments: [], unavailable: true };
   }
 }
 
 export async function getTournament(id: string): Promise<TournamentDetailDto | null> {
-  return fetchApi<TournamentDetailDto>(`/tournaments/${id}`);
+  return fetchApi<TournamentDetailDto>(`/tournaments/${id}`, { cacheSeconds: LIST_CACHE_SECONDS });
 }
 
 export async function loadTournament(id: string): Promise<{
   tournament: TournamentDetailDto | null;
   unavailable: boolean;
 }> {
+  const cacheKey = `tournaments:detail:${id}`;
   try {
-    return { tournament: await getTournament(id), unavailable: false };
+    const tournament = await getTournament(id);
+    if (tournament) {
+      await rememberSuccess(cacheKey, tournament);
+    }
+    return { tournament, unavailable: false };
   } catch {
+    const cached = await readFallback<TournamentDetailDto>(cacheKey);
+    if (cached) {
+      return { tournament: cached, unavailable: false };
+    }
     return { tournament: null, unavailable: true };
   }
 }

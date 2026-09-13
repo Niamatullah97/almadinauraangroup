@@ -35,7 +35,7 @@ export const ORGANIZER_ROUTES: Routes = [
           ),
         data: {
           title: 'Landing times',
-          subtitle: 'Enter pigeon landing times after the race starts',
+          subtitle: 'Enter pigeon landing times for the selected race day',
         },
       },
     ],

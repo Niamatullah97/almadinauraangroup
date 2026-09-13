@@ -1,8 +1,4 @@
-import { RaceDayStatus } from '../types/race-day';
-
 import {
-  assertOrganizerRaceDayIsLive,
-  assertRaceDayAcceptsLandingTimes,
   combineRaceDateAndLandingTime,
   cumulativeClockTimeInputs,
   findDuplicateRegistrationPigeonIds,
@@ -13,36 +9,6 @@ import {
 } from './landing-time';
 
 describe('landing-time utils', () => {
-  describe('assertRaceDayAcceptsLandingTimes', () => {
-    it('allows live race days', () => {
-      expect(() => assertRaceDayAcceptsLandingTimes(RaceDayStatus.LIVE)).not.toThrow();
-    });
-
-    it('rejects pending race days', () => {
-      expect(() => assertRaceDayAcceptsLandingTimes(RaceDayStatus.PENDING)).toThrow(
-        'Landing times can only be entered while the race day is Live',
-      );
-    });
-
-    it('rejects completed race days', () => {
-      expect(() => assertRaceDayAcceptsLandingTimes(RaceDayStatus.COMPLETED)).toThrow(
-        'Landing times can only be entered while the race day is Live',
-      );
-    });
-  });
-
-  describe('assertOrganizerRaceDayIsLive', () => {
-    it('allows live race days', () => {
-      expect(() => assertOrganizerRaceDayIsLive(RaceDayStatus.LIVE)).not.toThrow();
-    });
-
-    it('rejects completed race days for organizers', () => {
-      expect(() => assertOrganizerRaceDayIsLive(RaceDayStatus.COMPLETED)).toThrow(
-        'Organizers can only enter landing times after the race day has started',
-      );
-    });
-  });
-
   describe('combineRaceDateAndLandingTime', () => {
     it('combines race date and HH:mm time in Asia/Karachi', () => {
       const result = combineRaceDateAndLandingTime('2026-04-01', '14:35');

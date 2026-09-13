@@ -9,7 +9,7 @@ import { LandingTimeEntryComponent } from '../landing-times/landing-time-entry.c
   imports: [LandingTimeEntryComponent],
   template: `
     @if (tournamentId) {
-      <app-landing-time-entry [lockedTournamentId]="tournamentId" [requireLiveRaceDay]="true" />
+      <app-landing-time-entry [lockedTournamentId]="tournamentId" />
     }
   `,
 })

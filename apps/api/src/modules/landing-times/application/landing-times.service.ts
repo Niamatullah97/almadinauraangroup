@@ -3,8 +3,6 @@ import {
   combineReleaseDateTime,
   findDuplicateRegistrationPigeonIds,
   formatLandingTimeForInput,
-  isOrganizerToken,
-  JwtPayload,
 } from '@kabootar/shared';
 import {
   BadRequestException,
@@ -112,13 +110,8 @@ export class LandingTimesService {
     };
   }
 
-  async create(
-    tournamentId: string,
-    raceDayId: string,
-    dto: CreateLandingTimeDto,
-    actor?: JwtPayload,
-  ) {
-    const raceDay = await this.getRaceDayForMutation(tournamentId, raceDayId, actor);
+  async create(tournamentId: string, raceDayId: string, dto: CreateLandingTimeDto) {
+    const raceDay = await this.getRaceDayOrThrow(tournamentId, raceDayId);
     await this.validatePigeonOwnership(tournamentId, dto.participantId, dto.registrationPigeonId);
     await this.assertNoDuplicateEntry(raceDayId, dto.registrationPigeonId);
 
@@ -148,13 +141,8 @@ export class LandingTimesService {
     }
   }
 
-  async bulkSave(
-    tournamentId: string,
-    raceDayId: string,
-    dto: BulkSaveLandingTimesDto,
-    actor?: JwtPayload,
-  ) {
-    const raceDay = await this.getRaceDayForMutation(tournamentId, raceDayId, actor);
+  async bulkSave(tournamentId: string, raceDayId: string, dto: BulkSaveLandingTimesDto) {
+    const raceDay = await this.getRaceDayOrThrow(tournamentId, raceDayId);
     const nominatedSettings = await this.getTournamentEntrySettings(tournamentId);
     const duplicateIds = findDuplicateRegistrationPigeonIds(
       dto.entries.map((entry) => entry.registrationPigeonId),
@@ -224,14 +212,8 @@ export class LandingTimesService {
     };
   }
 
-  async update(
-    tournamentId: string,
-    raceDayId: string,
-    id: string,
-    dto: UpdateLandingTimeDto,
-    actor?: JwtPayload,
-  ) {
-    const raceDay = await this.getRaceDayForMutation(tournamentId, raceDayId, actor);
+  async update(tournamentId: string, raceDayId: string, id: string, dto: UpdateLandingTimeDto) {
+    const raceDay = await this.getRaceDayOrThrow(tournamentId, raceDayId);
     const existing = await this.getLandingTimeOrThrow(tournamentId, raceDayId, id);
     const landingTime = this.parseAndValidateLandingTime(raceDay, dto.landingTime);
 
@@ -250,8 +232,8 @@ export class LandingTimesService {
     return this.mapLandingTime(record);
   }
 
-  async remove(tournamentId: string, raceDayId: string, id: string, actor?: JwtPayload) {
-    await this.getRaceDayForMutation(tournamentId, raceDayId, actor);
+  async remove(tournamentId: string, raceDayId: string, id: string) {
+    await this.getRaceDayOrThrow(tournamentId, raceDayId);
     await this.getLandingTimeOrThrow(tournamentId, raceDayId, id);
 
     const record = await this.prisma.pigeonLandingTime.update({
@@ -274,27 +256,6 @@ export class LandingTimesService {
 
     if (!raceDay) {
       throw new NotFoundException('Race day not found');
-    }
-
-    return raceDay;
-  }
-
-  private async getRaceDayForMutation(tournamentId: string, raceDayId: string, actor?: JwtPayload) {
-    const raceDay = await this.getRaceDayOrThrow(tournamentId, raceDayId);
-
-    const raceDate = raceDay.raceDate.toISOString().slice(0, 10);
-    const startsAt = combineReleaseDateTime(raceDate, raceDay.releaseTime);
-    const endsAt = combineReleaseDateTime(raceDate, raceDay.endTime);
-    const now = new Date();
-
-    if (actor && isOrganizerToken(actor)) {
-      if (now.getTime() < startsAt.getTime()) {
-        throw new BadRequestException('Landing times cannot be entered before the race day starts');
-      }
-
-      if (now.getTime() > endsAt.getTime()) {
-        throw new BadRequestException('Landing times cannot be edited after the race day ends');
-      }
     }
 
     return raceDay;

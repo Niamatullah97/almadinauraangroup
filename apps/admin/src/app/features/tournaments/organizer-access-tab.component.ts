@@ -9,6 +9,7 @@ import {
 } from '@kabootar/shared';
 
 import { ConfirmationDialogComponent } from '../../shared/components/confirmation-dialog/confirmation-dialog.component';
+
 import { AccessLinkService } from './access-link.service';
 
 @Component({
@@ -22,7 +23,7 @@ import { AccessLinkService } from './access-link.service';
           <h3 class="access-tab__title">Organizer access</h3>
           <p class="access-tab__subtitle">
             Share a link and secret key so the tournament organizer can preview details and enter
-            landing times after a race day starts.
+            landing times.
           </p>
         </div>
       </div>
@@ -45,7 +46,9 @@ import { AccessLinkService } from './access-link.service';
                 type="datetime-local"
                 class="form-control"
                 formControlName="expiresAt"
-                [class.is-invalid]="form.controls.expiresAt.invalid && form.controls.expiresAt.touched"
+                [class.is-invalid]="
+                  form.controls.expiresAt.invalid && form.controls.expiresAt.touched
+                "
               />
             </div>
           }
@@ -63,18 +66,28 @@ import { AccessLinkService } from './access-link.service';
       @if (createdLink()) {
         <div class="access-tab__secret">
           <h4>Share these details once</h4>
-          <p class="form-hint">The secret key is shown only now. Copy it before leaving this page.</p>
+          <p class="form-hint">
+            The secret key is shown only now. Copy it before leaving this page.
+          </p>
           <div class="access-tab__secret-row">
             <span class="detail-label">Access link</span>
             <code>{{ createdLink()!.accessUrl }}</code>
-            <button type="button" class="btn btn-secondary btn-sm" (click)="copy(createdLink()!.accessUrl)">
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              (click)="copy(createdLink()!.accessUrl)"
+            >
               Copy link
             </button>
           </div>
           <div class="access-tab__secret-row">
             <span class="detail-label">Secret key</span>
             <code>{{ createdLink()!.secretKey }}</code>
-            <button type="button" class="btn btn-secondary btn-sm" (click)="copy(createdLink()!.secretKey)">
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              (click)="copy(createdLink()!.secretKey)"
+            >
               Copy key
             </button>
           </div>
@@ -109,15 +122,25 @@ import { AccessLinkService } from './access-link.service';
                   <td>{{ link.expiresAt | date: 'medium' }}</td>
                   <td>{{ expiryLabels[link.expiryPreset] }}</td>
                   <td>
-                    <span class="status-badge" [class]="statusClass(link)">{{ statusLabel(link) }}</span>
+                    <span class="status-badge" [class]="statusClass(link)">{{
+                      statusLabel(link)
+                    }}</span>
                   </td>
                   <td>
                     <div class="row-actions">
-                      <button type="button" class="btn btn-secondary btn-sm" (click)="copy(link.accessUrl)">
+                      <button
+                        type="button"
+                        class="btn btn-secondary btn-sm"
+                        (click)="copy(link.accessUrl)"
+                      >
                         Copy link
                       </button>
                       @if (link.isActive) {
-                        <button type="button" class="btn btn-danger btn-sm" (click)="openRevokeDialog(link)">
+                        <button
+                          type="button"
+                          class="btn btn-danger btn-sm"
+                          (click)="openRevokeDialog(link)"
+                        >
                           Revoke
                         </button>
                       }
@@ -140,7 +163,11 @@ import { AccessLinkService } from './access-link.service';
       />
     </section>
   `,
-  styleUrls: ['./tournament-shared.scss', './tournament-list.component.scss', './organizer-access-tab.component.scss'],
+  styleUrls: [
+    './tournament-shared.scss',
+    './tournament-list.component.scss',
+    './organizer-access-tab.component.scss',
+  ],
 })
 export class OrganizerAccessTabComponent implements OnInit {
   readonly tournamentId = input.required<string>();

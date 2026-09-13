@@ -9,6 +9,7 @@ import helmet from 'helmet';
 
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { PublicCacheInterceptor } from './common/interceptors/public-cache.interceptor';
 import { ResponseTransformInterceptor } from './common/interceptors/response-transform.interceptor';
 
 async function bootstrap() {
@@ -48,7 +49,10 @@ async function bootstrap() {
   );
 
   app.useGlobalFilters(new AllExceptionsFilter());
-  app.useGlobalInterceptors(new ResponseTransformInterceptor(app.get(Reflector)));
+  app.useGlobalInterceptors(
+    new PublicCacheInterceptor(),
+    new ResponseTransformInterceptor(app.get(Reflector)),
+  );
 
   if (configService.get<string>('NODE_ENV') !== 'production') {
     const swaggerConfig = new DocumentBuilder()

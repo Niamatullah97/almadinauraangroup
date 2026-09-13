@@ -146,7 +146,7 @@ describe('ResultsService', () => {
 
     const result = await service.getTotalResults('tournament-1');
 
-    expect(result.rankings[0].participantId).toBe('participant-a');
+    expect(result.rankings[0].participantId).toBe('participant-b');
     expect(result.firstWinner?.participantId).toBe('participant-b');
   });
 

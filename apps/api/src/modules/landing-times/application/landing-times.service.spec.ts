@@ -1,4 +1,3 @@
-import { AuthTokenType, UserRole } from '@kabootar/shared';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { RaceDayStatus } from '@prisma/client';
 
@@ -253,29 +252,19 @@ describe('LandingTimesService', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
-  it('rejects organizer landing time entry after the race day ends', async () => {
+  it('allows landing time entry after the race day ends when the time is inside the window', async () => {
     jest.setSystemTime(new Date('2026-04-01T13:00:01.000Z'));
     prisma.raceDay.findFirst.mockResolvedValue({ ...raceDay, status: RaceDayStatus.COMPLETED });
     prisma.registrationPigeon.findFirst.mockResolvedValue({ id: 'pigeon-1' });
+    prisma.pigeonLandingTime.findFirst.mockResolvedValue(null);
+    prisma.pigeonLandingTime.create.mockResolvedValue(landingTime);
 
     await expect(
-      service.create(
-        'tournament-1',
-        'race-day-1',
-        {
-          participantId: 'participant-1',
-          registrationPigeonId: 'pigeon-1',
-          landingTime: '14:35:22',
-        },
-        {
-          sub: 'link-1',
-          email: '',
-          role: UserRole.ORGANIZER,
-          permissions: [],
-          tokenType: AuthTokenType.ORGANIZER,
-          tournamentId: 'tournament-1',
-        },
-      ),
-    ).rejects.toThrow('Landing times cannot be edited after the race day ends');
+      service.create('tournament-1', 'race-day-1', {
+        participantId: 'participant-1',
+        registrationPigeonId: 'pigeon-1',
+        landingTime: '14:35:22',
+      }),
+    ).resolves.toMatchObject({ id: 'landing-1' });
   });
 });

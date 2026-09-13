@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { resetResponseCache } from '@/lib/api/response-cache';
 import {
   getTournament,
   getTournaments,
@@ -10,6 +11,7 @@ import {
 describe('tournaments API', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    resetResponseCache();
   });
 
   it('fetches tournament list items', async () => {
@@ -34,7 +36,7 @@ describe('tournaments API', () => {
     expect(tournaments).toEqual([{ id: 't1', title: 'Spring Cup' }]);
     expect(fetch).toHaveBeenCalledWith(
       'http://localhost:3000/api/v1/tournaments?limit=100',
-      expect.objectContaining({ cache: 'no-store' }),
+      expect.objectContaining({ cache: 'force-cache' }),
     );
   });
 
@@ -63,6 +65,38 @@ describe('tournaments API', () => {
     await expect(loadTournamentList()).resolves.toEqual({
       tournaments: [],
       unavailable: true,
+    });
+  });
+
+  it('keeps the last successful tournament list when the API later fails', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: {
+            items: [{ id: 't1', title: 'Spring Cup' }],
+            total: 1,
+            page: 1,
+            limit: 100,
+            totalPages: 1,
+          },
+        }),
+      })
+      .mockResolvedValue({
+        ok: false,
+        status: 503,
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(loadTournamentList()).resolves.toEqual({
+      tournaments: [{ id: 't1', title: 'Spring Cup' }],
+      unavailable: false,
+    });
+    await expect(loadTournamentList()).resolves.toEqual({
+      tournaments: [{ id: 't1', title: 'Spring Cup' }],
+      unavailable: false,
     });
   });
 

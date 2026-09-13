@@ -181,23 +181,13 @@ describe('LandingTimeEntryComponent', () => {
     expect(landingTimeService.bulkSave).not.toHaveBeenCalled();
   });
 
-  it('keeps pigeon cells enabled for superadmin after the race-day end time', () => {
+  it('keeps pigeon cells enabled after the race-day end time', () => {
     fixture.componentInstance.onTournamentChange('tournament-1');
     fixture.componentInstance.onRaceDayChange('race-day-1');
     jasmine.clock().mockDate(new Date(2026, 3, 1, 18, 0, 1));
     jasmine.clock().tick(1000);
 
     expect(fixture.componentInstance.canEnterTimes()).toBeTrue();
-  });
-
-  it('disables organizer entry after the race-day end time', () => {
-    fixture.componentRef.setInput('requireLiveRaceDay', true);
-    fixture.componentInstance.onTournamentChange('tournament-1');
-    fixture.componentInstance.onRaceDayChange('race-day-1');
-    fixture.detectChanges();
-    jasmine.clock().mockDate(new Date('2026-04-01T13:00:01.000Z'));
-    jasmine.clock().tick(1000);
-
-    expect(fixture.componentInstance.canEnterTimes()).toBeFalse();
+    expect(fixture.nativeElement.querySelector('.landing-entry__time-input').disabled).toBeFalse();
   });
 });

@@ -1,18 +1,4 @@
-import { RaceDayStatus } from '../types/race-day';
-
 import { combineDateAndClockTime, formatClockInAppTimezone } from './timezone';
-
-export function assertRaceDayAcceptsLandingTimes(status: RaceDayStatus): void {
-  if (status !== RaceDayStatus.LIVE) {
-    throw new Error('Landing times can only be entered while the race day is Live');
-  }
-}
-
-export function assertOrganizerRaceDayIsLive(status: RaceDayStatus): void {
-  if (status !== RaceDayStatus.LIVE) {
-    throw new Error('Organizers can only enter landing times after the race day has started');
-  }
-}
 
 export function combineRaceDateAndLandingTime(raceDate: string, landingTime: string): Date {
   const normalizedTime = normalizeLandingTimeInput(landingTime);

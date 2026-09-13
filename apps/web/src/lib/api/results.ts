@@ -4,7 +4,7 @@ import { fetchApi } from './client';
 
 async function fetchResults<T>(path: string): Promise<T | null> {
   try {
-    return await fetchApi<T>(path);
+    return await fetchApi<T>(path, { cacheSeconds: 10 });
   } catch {
     return null;
   }
