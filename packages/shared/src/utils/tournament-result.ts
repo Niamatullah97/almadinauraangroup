@@ -373,8 +373,9 @@ export function markBravePigeon(
 }
 
 /**
- * First winner is the loft whose first pigeon landed last,
- * once every loft has at least one pigeon home.
+ * First winner updates as landing times are entered. Every loft that has
+ * landed at least one pigeon is eligible. Among those, the loft whose first
+ * pigeon landed last wins.
  */
 export function findFirstWinner(
   pigeons: ResultPigeonLandingInput[],
@@ -394,10 +395,14 @@ export function findFirstWinner(
       .sort(compareLandingTimes);
 
     if (landed.length === 0) {
-      return null;
+      continue;
     }
 
     firstPigeons.push(landed[0]);
+  }
+
+  if (firstPigeons.length === 0) {
+    return null;
   }
 
   firstPigeons.sort((left, right) => {

@@ -189,7 +189,7 @@ describe('tournament-result calculations', () => {
   });
 
   describe('winners', () => {
-    it('picks first winner as the latest first pigeon once every loft has landed one', () => {
+    it('picks first winner as the latest first pigeon among lofts that have landed', () => {
       const pigeons = [
         pigeon('p1', 'participant-a', 'Ahmed', 'Sky Loft', 1, landingAt(7, 45)),
         pigeon('p2', 'participant-a', 'Ahmed', 'Sky Loft', 2, landingAt(9, 0)),
@@ -206,7 +206,7 @@ describe('tournament-result calculations', () => {
       expect(result.averageWinner?.participantId).toBe('participant-a');
     });
 
-    it('does not name a first winner until every loft has a first pigeon', () => {
+    it('names first winner as landing times are entered before every loft has a first pigeon', () => {
       const pigeons = [
         pigeon('p1', 'participant-a', 'Ahmed', 'Sky Loft', 1, landingAt(7, 45)),
         pigeon('p2', 'participant-b', 'Bilal', 'Star Loft', 1, null),
@@ -214,7 +214,8 @@ describe('tournament-result calculations', () => {
 
       const result = calculateDailyResults(RACE_DAY, pigeons, WINDOW, NOW);
 
-      expect(result.firstWinner).toBeNull();
+      expect(result.firstWinner?.registrationPigeonId).toBe('p1');
+      expect(result.firstWinner?.landingClockTime).toBe('07:45:00');
     });
 
     it('calculates last winner as landing times are entered before race end', () => {
