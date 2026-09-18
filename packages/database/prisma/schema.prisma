@@ -341,6 +341,7 @@ model RegistrationPigeon {
   gender         PigeonSex    @map("gender")
   isDoubleStamp      Boolean      @default(false) @map("is_double_stamp")
   isSingleNominated  Boolean      @default(false) @map("is_single_nominated")
+  isPending          Boolean      @default(false) @map("is_pending")
   status         PigeonStatus @default(ACTIVE)
   createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz
   updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz

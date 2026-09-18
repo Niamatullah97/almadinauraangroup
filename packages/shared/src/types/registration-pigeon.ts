@@ -11,6 +11,7 @@ export interface RegistrationPigeonDto {
   gender: PigeonSex;
   isDoubleStamp: boolean;
   isSingleNominated: boolean;
+  isPending: boolean;
   status: PigeonStatus;
   createdAt: string;
   updatedAt: string;

@@ -122,15 +122,17 @@ function winnerSlotClasses(flags: {
   last?: boolean;
   average?: boolean;
   brave?: boolean;
+  pending?: boolean;
 }): string {
   const classes = ['timetable-time'];
-  if (flags.first || flags.last || flags.average || flags.brave) {
+  if (flags.first || flags.last || flags.average || flags.brave || flags.pending) {
     classes.push('timetable-cell--flash');
   }
   if (flags.first) classes.push('timetable-cell--first');
   if (flags.last) classes.push('timetable-cell--last');
   if (flags.average) classes.push('timetable-cell--average');
   if (flags.brave) classes.push('timetable-cell--brave');
+  if (flags.pending) classes.push('timetable-cell--pending');
   return classes.join(' ');
 }
 
@@ -139,14 +141,17 @@ function WinnerSlotBadges({
   last,
   average,
   brave,
+  pending,
 }: {
   first?: boolean;
   last?: boolean;
   average?: boolean;
   brave?: boolean;
+  pending?: boolean;
 }) {
   return (
     <>
+      {pending && <span className="pending-badge">Pending</span>}
       {first && <span className="winner-slot-badge winner-slot-badge--first">First winner</span>}
       {last && <span className="winner-slot-badge winner-slot-badge--last">Last winner</span>}
       {average && (
@@ -215,8 +220,15 @@ export function RankingTable({
                   <div className="timetable-name">{row.participantName}</div>
                 </td>
                 {singleColumnView ? (
-                  <td className="timetable-time">
+                  <td
+                    className={winnerSlotClasses({
+                      pending: nominatedPigeon(row, singleColumnView)?.isPending,
+                    })}
+                  >
                     {nominatedPigeon(row, singleColumnView)?.landingClockTime ?? ''}
+                    {nominatedPigeon(row, singleColumnView)?.isPending && (
+                      <span className="pending-badge">Pending</span>
+                    )}
                   </td>
                 ) : (
                   pigeonNumbers.map((number) => {
@@ -234,6 +246,7 @@ export function RankingTable({
                       pigeon.registrationPigeonId === averageWinner?.registrationPigeonId,
                     );
                     const isBrave = Boolean(pigeon?.isBrave && pigeon.landingClockTime);
+                    const isPending = Boolean(pigeon?.isPending);
                     return (
                       <td
                         key={number}
@@ -242,6 +255,7 @@ export function RankingTable({
                           last: isLast,
                           average: isAverage,
                           brave: isBrave,
+                          pending: isPending,
                         })}
                       >
                         {pigeon?.landingClockTime ?? ''}
@@ -261,6 +275,7 @@ export function RankingTable({
                           last={isLast}
                           average={isAverage}
                           brave={isBrave}
+                          pending={isPending}
                         />
                       </td>
                     );

@@ -129,6 +129,7 @@ function toLandingInputs(
     ringNumber: pigeon.ringNumber,
     isDoubleStamp: pigeon.isDoubleStamp,
     isSingleNominated: pigeon.isSingleNominated ?? false,
+    isPending: pigeon.isPending ?? false,
     landingTime: earliestLanding(pigeon),
     calculatedDurationMs:
       pigeon.landings.length > 0
@@ -155,6 +156,7 @@ export function buildPigeonRows(
     ringNumber: pigeon.ringNumber,
     isDoubleStamp: pigeon.isDoubleStamp,
     isSingleNominated: pigeon.isSingleNominated ?? false,
+    isPending: pigeon.isPending ?? false,
     isBrave: false,
     landingTimeMs: pigeon.landingTime
       ? (pigeon.calculatedDurationMs ?? calculateElapsedDurationMs(origin, pigeon.landingTime))
@@ -719,6 +721,7 @@ export function toDailyPigeonInputs(
       ringNumber: pigeon.ringNumber,
       isDoubleStamp: pigeon.isDoubleStamp,
       isSingleNominated: pigeon.isSingleNominated ?? false,
+      isPending: pigeon.isPending ?? false,
       landingTime: landing?.landingTime ?? null,
       profileImage: pigeon.profileImage ?? null,
     };

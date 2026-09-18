@@ -12,6 +12,7 @@ export interface PigeonLandingTimeDto {
 }
 
 export interface LandingTimePigeonRowDto {
+  registrationId: string;
   registrationPigeonId: string;
   pigeonNumber: number;
   ringNumber: string;
@@ -19,6 +20,7 @@ export interface LandingTimePigeonRowDto {
   landingTime: string | null;
   isDoubleStamp: boolean;
   isSingleNominated: boolean;
+  isPending: boolean;
 }
 
 export interface LandingTimeParticipantGroupDto {

@@ -54,6 +54,7 @@ describe('RegistrationPigeonsService', () => {
     gender: PigeonSex.COCK,
     isDoubleStamp: false,
     isSingleNominated: false,
+    isPending: false,
     status: 'ACTIVE',
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-01-01'),
@@ -156,6 +157,16 @@ describe('RegistrationPigeonsService', () => {
     const result = await service.toggleDoubleStamp('registration-1', 'pigeon-1');
 
     expect(result.isDoubleStamp).toBe(true);
+  });
+
+  it('toggles pending flag', async () => {
+    prisma.tournamentRegistration.findFirst.mockResolvedValue(registration);
+    prisma.registrationPigeon.findFirst.mockResolvedValue(pigeon);
+    prisma.registrationPigeon.update.mockResolvedValue({ ...pigeon, isPending: true });
+
+    const result = await service.togglePending('registration-1', 'pigeon-1');
+
+    expect(result.isPending).toBe(true);
   });
 
   it('rejects double stamp when the tournament does not enable it', async () => {

@@ -1,8 +1,8 @@
-import { Permission } from '@kabootar/shared';
+import { Permission, UserRole } from '@kabootar/shared';
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { Permissions, Public } from '../../../common/decorators/auth.decorators';
+import { Permissions, Public, Roles } from '../../../common/decorators/auth.decorators';
 import { RegistrationPigeonsService } from '../application/registration-pigeons.service';
 
 import { BulkGeneratePigeonsDto } from './dto/bulk-generate-pigeons.dto';
@@ -58,6 +58,14 @@ export class RegistrationPigeonsController {
   @Permissions(Permission.PIGEONS_UPDATE)
   toggleSingleNominated(@Param('registrationId') registrationId: string, @Param('id') id: string) {
     return this.registrationPigeonsService.toggleSingleNominated(registrationId, id);
+  }
+
+  @Patch(':id/pending')
+  @ApiBearerAuth()
+  @Roles(UserRole.SUPER_ADMIN)
+  @Permissions(Permission.PIGEONS_UPDATE)
+  togglePending(@Param('registrationId') registrationId: string, @Param('id') id: string) {
+    return this.registrationPigeonsService.togglePending(registrationId, id);
   }
 
   @Patch(':id')

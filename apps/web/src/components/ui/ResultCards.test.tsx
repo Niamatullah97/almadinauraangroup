@@ -158,6 +158,44 @@ describe('ResultCards', () => {
     expect(screen.queryByText('Total')).not.toBeInTheDocument();
   });
 
+  it('highlights a pending pigeon cell', () => {
+    render(
+      <RankingTable
+        rows={[
+          {
+            participantId: 'p1',
+            participantName: 'Ali Khan',
+            loftName: 'Sky Loft',
+            rank: 1,
+            totalPigeons: 1,
+            landedPigeons: 1,
+            remainingPigeons: 0,
+            totalLandingTimeMs: 3600000,
+            averageLandingTimeMs: 3600000,
+            currentFlyingTimeMs: null,
+            pigeons: [
+              {
+                registrationPigeonId: 'pg1',
+                participantId: 'p1',
+                pigeonNumber: 1,
+                ringNumber: 'PK-001',
+                isDoubleStamp: false,
+                isPending: true,
+                isBrave: false,
+                landingTimeMs: 3600000,
+                landingClockTime: '09:24:00',
+              },
+            ],
+          },
+        ]}
+      />,
+    );
+
+    const cell = screen.getByText('09:24:00').closest('td');
+    expect(cell).toHaveClass('timetable-cell--pending');
+    expect(screen.getByText('Pending')).toBeInTheDocument();
+  });
+
   it('calculates the total column from race day totals', () => {
     const row = {
       participantId: 'p1',

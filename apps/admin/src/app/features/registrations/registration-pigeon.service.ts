@@ -83,6 +83,15 @@ export class RegistrationPigeonService {
       .pipe(map((response) => response.data as RegistrationPigeonDto));
   }
 
+  togglePending(registrationId: string, pigeonId: string): Observable<RegistrationPigeonDto> {
+    return this.api
+      .patch<RegistrationPigeonDto>(
+        `/registrations/${registrationId}/pigeons/${pigeonId}/pending`,
+        {},
+      )
+      .pipe(map((response) => response.data as RegistrationPigeonDto));
+  }
+
   delete(registrationId: string, pigeonId: string): Observable<RegistrationPigeonDto> {
     return this.api
       .delete<RegistrationPigeonDto>(`/registrations/${registrationId}/pigeons/${pigeonId}`)

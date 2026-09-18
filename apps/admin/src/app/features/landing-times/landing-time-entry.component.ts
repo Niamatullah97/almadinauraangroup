@@ -11,7 +11,9 @@ import {
   normalizeLandingTimeInput,
 } from '@kabootar/shared';
 
+import { AuthService } from '../../core/services/auth.service';
 import { ParticipantService } from '../participants/participant.service';
+import { RegistrationPigeonService } from '../registrations/registration-pigeon.service';
 import { RaceDayService } from '../tournaments/race-day.service';
 import { TournamentService } from '../tournaments/tournament.service';
 
@@ -20,14 +22,17 @@ import { LandingTimeService } from './landing-time.service';
 interface EntryCell {
   key: string;
   participantId: string;
+  registrationId: string;
   registrationPigeonId: string;
   pigeonNumber: number;
   landingTime: string;
   isDoubleStamp: boolean;
   isSingleNominated: boolean;
+  isPending: boolean;
   savedLandingTime: string;
   savedIsDoubleStamp: boolean;
   savedIsSingleNominated: boolean;
+  savedIsPending: boolean;
   error: string | null;
 }
 
@@ -186,7 +191,21 @@ interface ParticipantEntryRow {
                         <div
                           class="landing-entry__cell"
                           [class.landing-entry__cell--error]="cell.error"
+                          [class.landing-entry__cell--pending]="cell.isPending"
                         >
+                          @if (isSuperAdmin()) {
+                            <label
+                              class="landing-entry__pending-toggle"
+                              [class.landing-entry__pending-toggle--on]="cell.isPending"
+                            >
+                              <input
+                                type="checkbox"
+                                [(ngModel)]="cell.isPending"
+                                (change)="onPendingChange(cell)"
+                              />
+                              Pending
+                            </label>
+                          }
                           <input
                             type="text"
                             inputmode="numeric"
@@ -264,6 +283,8 @@ export class LandingTimeEntryComponent implements OnInit {
   private readonly raceDayService = inject(RaceDayService);
   private readonly landingTimeService = inject(LandingTimeService);
   private readonly participantService = inject(ParticipantService);
+  private readonly registrationPigeonService = inject(RegistrationPigeonService);
+  private readonly authService = inject(AuthService);
 
   readonly lockedTournamentId = input<string | null>(null);
 
@@ -344,6 +365,10 @@ export class LandingTimeEntryComponent implements OnInit {
     return this.entrySheet()?.singleNominatedEnabled ?? false;
   }
 
+  isSuperAdmin(): boolean {
+    return this.authService.isSuperAdmin();
+  }
+
   profileUrl(profileImage: string | null): string | null {
     return this.participantService.resolveProfileUrl(profileImage);
   }
@@ -418,6 +443,22 @@ export class LandingTimeEntryComponent implements OnInit {
     this.saveCells([cell], true);
   }
 
+  onPendingChange(cell: EntryCell): void {
+    cell.error = null;
+    this.registrationPigeonService
+      .togglePending(cell.registrationId, cell.registrationPigeonId)
+      .subscribe({
+        next: (pigeon) => {
+          cell.isPending = pigeon.isPending;
+          cell.savedIsPending = pigeon.isPending;
+        },
+        error: (err) => {
+          cell.isPending = cell.savedIsPending;
+          cell.error = this.extractErrorMessage(err);
+        },
+      });
+  }
+
   saveAll(): void {
     const cellsToSave = this.allCells().filter((cell) => {
       try {
@@ -475,14 +516,17 @@ export class LandingTimeEntryComponent implements OnInit {
           {
             key: `${participant.participantId}-${pigeon.registrationPigeonId}`,
             participantId: participant.participantId,
+            registrationId: pigeon.registrationId,
             registrationPigeonId: pigeon.registrationPigeonId,
             pigeonNumber: pigeon.pigeonNumber,
             landingTime: pigeon.landingTime ?? '',
             isDoubleStamp: pigeon.isDoubleStamp,
             isSingleNominated: pigeon.isSingleNominated,
+            isPending: pigeon.isPending,
             savedLandingTime: pigeon.landingTime ?? '',
             savedIsDoubleStamp: pigeon.isDoubleStamp,
             savedIsSingleNominated: pigeon.isSingleNominated,
+            savedIsPending: pigeon.isPending,
             error: null,
           } satisfies EntryCell,
         ]),

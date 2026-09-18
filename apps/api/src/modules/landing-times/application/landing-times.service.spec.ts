@@ -82,6 +82,7 @@ describe('LandingTimesService', () => {
     prisma.raceDay.findFirst.mockResolvedValue(raceDay);
     prisma.tournamentRegistration.findMany.mockResolvedValue([
       {
+        id: 'registration-1',
         participantId: 'participant-1',
         participant: {
           id: 'participant-1',
@@ -95,6 +96,7 @@ describe('LandingTimesService', () => {
             pigeonNumber: 1,
             ringNumber: 'PK-001',
             isDoubleStamp: true,
+            isPending: true,
             landingTimes: [landingTime],
           },
         ],
@@ -109,6 +111,8 @@ describe('LandingTimesService', () => {
     expect(result.participants[0].profileImage).toBeNull();
     expect(result.participants[0].pigeons[0].landingTime).toBe('14:35:22');
     expect(result.participants[0].pigeons[0].isDoubleStamp).toBe(true);
+    expect(result.participants[0].pigeons[0].registrationId).toBe('registration-1');
+    expect(result.participants[0].pigeons[0].isPending).toBe(true);
     expect(result.doubleStampEnabled).toBe(false);
   });
 

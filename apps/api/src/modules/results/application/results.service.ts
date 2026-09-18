@@ -258,6 +258,7 @@ export class ResultsService {
         ringNumber: pigeon.ringNumber,
         isDoubleStamp: pigeon.isDoubleStamp,
         isSingleNominated: pigeon.isSingleNominated ?? false,
+        isPending: pigeon.isPending ?? false,
         landings: pigeon.landingTimes.map((landing) => ({
           raceDayId: landing.raceDayId,
           landingTime: landing.landingTime,

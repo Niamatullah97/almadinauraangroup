@@ -36,8 +36,8 @@ export function ResultPageContent({
 }: ResultPageContentProps) {
   return (
     <>
-      <div className="page-hero">
-        <h1>{title}</h1>
+      <div className="result-page-heading">
+        <h2>{title}</h2>
         {subtitle && <p>{subtitle}</p>}
       </div>
 

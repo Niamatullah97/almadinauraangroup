@@ -78,6 +78,7 @@ export class LandingTimesService {
         pigeons: registration.pigeons.map((pigeon) => {
           const landing = pigeon.landingTimes[0];
           return {
+            registrationId: registration.id,
             registrationPigeonId: pigeon.id,
             pigeonNumber: pigeon.pigeonNumber,
             ringNumber: pigeon.ringNumber,
@@ -85,6 +86,7 @@ export class LandingTimesService {
             landingTime: landing ? formatLandingTimeForInput(landing.landingTime) : null,
             isDoubleStamp: pigeon.isDoubleStamp,
             isSingleNominated: pigeon.isSingleNominated ?? false,
+            isPending: pigeon.isPending ?? false,
           };
         }),
       })),

@@ -251,6 +251,18 @@ export class RegistrationPigeonsService {
     return this.mapPigeon(pigeon);
   }
 
+  async togglePending(registrationId: string, id: string) {
+    await this.getRegistrationOrThrow(registrationId);
+    const existing = await this.getPigeonOrThrow(registrationId, id);
+
+    const pigeon = await this.prisma.registrationPigeon.update({
+      where: { id },
+      data: { isPending: !existing.isPending },
+    });
+
+    return this.mapPigeon(pigeon);
+  }
+
   async remove(registrationId: string, id: string) {
     const registration = await this.getRegistrationForMutation(registrationId);
     await this.getPigeonOrThrow(registrationId, id);
@@ -514,6 +526,7 @@ export class RegistrationPigeonsService {
       gender: pigeon.gender,
       isDoubleStamp: pigeon.isDoubleStamp,
       isSingleNominated: pigeon.isSingleNominated ?? false,
+      isPending: pigeon.isPending ?? false,
       status: pigeon.status,
       createdAt: pigeon.createdAt.toISOString(),
       updatedAt: pigeon.updatedAt.toISOString(),

@@ -311,6 +311,7 @@ export class PdfGeneratorService {
               pigeon?.isDoubleStamp && pigeon.landingClockTime ? 'Double stamp' : null,
               pigeon?.isSingleNominated && pigeon.landingClockTime ? 'Nominated' : null,
               pigeon?.isBrave && pigeon.landingClockTime ? 'Bravery' : null,
+              pigeon?.isPending ? 'Pending' : null,
             ]
               .filter(Boolean)
               .join(' · ') || undefined,

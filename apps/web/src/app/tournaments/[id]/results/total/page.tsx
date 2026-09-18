@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 
 import { ResultPageContent } from '@/components/results/ResultPageContent';
-import { RaceDayTabs } from '@/components/tournaments/RaceDayTabs';
 import { LoadFailed } from '@/components/ui/LoadFailed';
 import { TournamentTotalTable } from '@/components/ui/ResultCards';
 import { getDailyResults, getTotalResults } from '@/lib/api/results';
@@ -38,11 +37,7 @@ export default async function TotalResultsPage({ params }: Props) {
   ]);
 
   if (unavailable) {
-    return (
-      <div className="container" style={{ maxWidth: 1400 }}>
-        <LoadFailed retryHref={`/tournaments/${id}/results/total`} />
-      </div>
-    );
+    return <LoadFailed retryHref={`/tournaments/${id}/results/total`} />;
   }
 
   if (!tournament) notFound();
@@ -56,50 +51,30 @@ export default async function TotalResultsPage({ params }: Props) {
   }));
 
   if (!results) {
-    return (
-      <div className="container" style={{ maxWidth: 1400 }}>
-        <RaceDayTabs
-          tournamentId={id}
-          raceDays={raceDays}
-          active="total"
-          doubleStampEnabled={tournament.doubleStampEnabled}
-          singleNominatedEnabled={tournament.singleNominatedEnabled}
-        />
-        <div className="empty-state">Total results are not available yet.</div>
-      </div>
-    );
+    return <div className="empty-state">Total results are not available yet.</div>;
   }
 
   const loftsCount = countParticipantLofts(results.rankings.map((row) => row.participantId));
 
   return (
-    <div className="container" style={{ maxWidth: 1400 }}>
-      <RaceDayTabs
-        tournamentId={id}
-        raceDays={raceDays}
-        active="total"
-        doubleStampEnabled={tournament.doubleStampEnabled}
-        singleNominatedEnabled={tournament.singleNominatedEnabled}
-      />
-      <ResultPageContent
-        title={`${tournament.title} — Total Results`}
-        subtitle={`Combined results across ${results.raceDayCount} race day${results.raceDayCount === 1 ? '' : 's'}.`}
-        summary={results.summary}
-        loftsCount={loftsCount}
-        firstWinner={results.firstWinner}
-        lastWinner={results.lastWinner}
-        averageWinner={results.averageWinner}
-        rankings={results.rankings}
-        rankingsContent={
-          <TournamentTotalTable
-            rows={results.rankings}
-            raceDays={raceDayResults}
-            firstWinner={results.firstWinner}
-            lastWinner={results.lastWinner}
-            averageWinner={results.averageWinner}
-          />
-        }
-      />
-    </div>
+    <ResultPageContent
+      title="Total Results"
+      subtitle={`Combined results across ${results.raceDayCount} race day${results.raceDayCount === 1 ? '' : 's'}.`}
+      summary={results.summary}
+      loftsCount={loftsCount}
+      firstWinner={results.firstWinner}
+      lastWinner={results.lastWinner}
+      averageWinner={results.averageWinner}
+      rankings={results.rankings}
+      rankingsContent={
+        <TournamentTotalTable
+          rows={results.rankings}
+          raceDays={raceDayResults}
+          firstWinner={results.firstWinner}
+          lastWinner={results.lastWinner}
+          averageWinner={results.averageWinner}
+        />
+      }
+    />
   );
 }

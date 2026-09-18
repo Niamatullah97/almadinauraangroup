@@ -2,7 +2,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RaceDayStatus } from '@kabootar/shared';
 import { of } from 'rxjs';
 
+import { AuthService } from '../../core/services/auth.service';
 import { ParticipantService } from '../participants/participant.service';
+import { RegistrationPigeonService } from '../registrations/registration-pigeon.service';
 import { RaceDayService } from '../tournaments/race-day.service';
 import { TournamentService } from '../tournaments/tournament.service';
 
@@ -11,10 +13,12 @@ import { LandingTimeService } from './landing-time.service';
 
 describe('LandingTimeEntryComponent', () => {
   let fixture: ComponentFixture<LandingTimeEntryComponent>;
+  let authService: { isSuperAdmin: jasmine.Spy };
 
   beforeEach(async () => {
     jasmine.clock().install();
     jasmine.clock().mockDate(new Date(2026, 3, 1, 12, 0, 0));
+    authService = { isSuperAdmin: jasmine.createSpy('isSuperAdmin').and.returnValue(true) };
 
     await TestBed.configureTestingModule({
       imports: [LandingTimeEntryComponent],
@@ -75,6 +79,7 @@ describe('LandingTimeEntryComponent', () => {
                     profileImage: null,
                     pigeons: [
                       {
+                        registrationId: 'registration-1',
                         registrationPigeonId: 'pigeon-1',
                         pigeonNumber: 1,
                         ringNumber: 'PK-001',
@@ -82,6 +87,7 @@ describe('LandingTimeEntryComponent', () => {
                         landingTime: null,
                         isDoubleStamp: false,
                         isSingleNominated: false,
+                        isPending: false,
                       },
                     ],
                   },
@@ -98,6 +104,18 @@ describe('LandingTimeEntryComponent', () => {
           useValue: {
             resolveProfileUrl: () => null,
             getInitials: () => 'AK',
+          },
+        },
+        {
+          provide: AuthService,
+          useValue: authService,
+        },
+        {
+          provide: RegistrationPigeonService,
+          useValue: {
+            togglePending: jasmine
+              .createSpy('togglePending')
+              .and.returnValue(of({ isPending: true })),
           },
         },
       ],
@@ -189,5 +207,23 @@ describe('LandingTimeEntryComponent', () => {
 
     expect(fixture.componentInstance.canEnterTimes()).toBeTrue();
     expect(fixture.nativeElement.querySelector('.landing-entry__time-input').disabled).toBeFalse();
+  });
+
+  it('shows a pending checkbox for super admins', () => {
+    fixture.componentInstance.onTournamentChange('tournament-1');
+    fixture.componentInstance.onRaceDayChange('race-day-1');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.landing-entry__pending-toggle')).toBeTruthy();
+  });
+
+  it('hides the pending checkbox when the user is not a super admin', () => {
+    authService.isSuperAdmin.and.returnValue(false);
+    fixture.detectChanges();
+    fixture.componentInstance.onTournamentChange('tournament-1');
+    fixture.componentInstance.onRaceDayChange('race-day-1');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.landing-entry__pending-toggle')).toBeNull();
   });
 });

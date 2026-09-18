@@ -379,7 +379,7 @@ nav a:hover {
 .data-table td {
   padding: 0.875rem 1rem;
   text-align: left;
-  border-bottom: 1px solid var(--color-border);
+  border: 1px solid var(--color-border);
 }
 
 .data-table th {
@@ -465,10 +465,6 @@ nav a:hover {
   font-variant-numeric: tabular-nums;
 }
 
-.data-table tr:last-child td {
-  border-bottom: none;
-}
-
 .data-table--results {
   min-width: 960px;
 }
@@ -531,6 +527,19 @@ nav a:hover {
   margin-top: 0.35rem;
   padding: 0.15rem 0.45rem;
   background: #c2410c;
+  color: #ffffff;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  border-radius: 4px;
+  line-height: 1.2;
+}
+
+.pending-badge {
+  display: block;
+  width: fit-content;
+  margin-top: 0.35rem;
+  padding: 0.15rem 0.45rem;
+  background: #dc2626;
   color: #ffffff;
   font-size: 0.6875rem;
   font-weight: 800;
@@ -616,6 +625,23 @@ nav a:hover {
   --flash-border-strong: #9a3412;
 }
 
+.timetable-cell--pending {
+  --flash-base: #fee2e2;
+  --flash-mid: #fca5a5;
+  --flash-border: #dc2626;
+  --flash-border-strong: #991b1b;
+}
+
+.timetable-cell--pending.timetable-cell--first,
+.timetable-cell--pending.timetable-cell--last,
+.timetable-cell--pending.timetable-cell--average,
+.timetable-cell--pending.timetable-cell--brave {
+  --flash-base: #fee2e2;
+  --flash-mid: #fca5a5;
+  --flash-border: #dc2626;
+  --flash-border-strong: #991b1b;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .timetable-cell--flash {
     animation: none;
@@ -677,7 +703,6 @@ nav a:hover {
 }
 
 .result-tabs {
-  justify-content: center;
   overflow-x: auto;
   flex-wrap: nowrap;
   padding-bottom: 0.25rem;
@@ -685,6 +710,20 @@ nav a:hover {
 
 .result-tabs .tab {
   flex: 0 0 auto;
+}
+
+.result-page-heading {
+  margin-bottom: 1.5rem;
+}
+
+.result-page-heading h2 {
+  font-size: 1.25rem;
+  margin: 0 0 0.35rem;
+}
+
+.result-page-heading p {
+  color: var(--color-muted);
+  margin: 0;
 }
 
 .tournament-total-table th,
