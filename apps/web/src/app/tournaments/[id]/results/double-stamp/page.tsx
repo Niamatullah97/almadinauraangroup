@@ -1,13 +1,12 @@
 import { notFound } from 'next/navigation';
 
-import { ResultPageContent } from '@/components/results/ResultPageContent';
+import { ResultPageLoader } from '@/components/results/ResultPageLoader';
 import { LoadFailed } from '@/components/ui/LoadFailed';
-import { getTotalDoubleStampResults } from '@/lib/api/results';
 import { loadTournament, loadTournamentContext } from '@/lib/api/tournaments';
-import { countParticipantLofts } from '@/lib/format';
 import { buildPageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -30,10 +29,7 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function DoubleStampResultsPage({ params }: Props) {
   const { id } = await params;
-  const [{ tournament, unavailable }, results] = await Promise.all([
-    loadTournamentContext(id),
-    getTotalDoubleStampResults(id),
-  ]);
+  const { tournament, unavailable } = await loadTournamentContext(id);
 
   if (unavailable) {
     return <LoadFailed retryHref={`/tournaments/${id}/results/double-stamp`} />;
@@ -41,24 +37,12 @@ export default async function DoubleStampResultsPage({ params }: Props) {
 
   if (!tournament) notFound();
 
-  if (!results) {
-    return <div className="empty-state">Double stamp results are not available yet.</div>;
-  }
-
-  const loftsCount = countParticipantLofts(results.rankings.map((row) => row.participantId));
-
   return (
-    <ResultPageContent
+    <ResultPageLoader
+      variant="double-stamp"
+      tournamentId={id}
       title="Double Stamp Results"
       subtitle="Rankings for pigeons marked as double stamp across the full tournament."
-      summary={results.summary}
-      loftsCount={loftsCount}
-      firstWinner={results.firstWinner}
-      lastWinner={results.lastWinner}
-      averageWinner={results.averageWinner}
-      rankings={results.rankings}
-      nominatedView="double-stamp"
-      showWinners={false}
     />
   );
 }

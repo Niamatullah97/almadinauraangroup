@@ -5,6 +5,7 @@ import { LoadFailed } from '@/components/ui/LoadFailed';
 import { loadTournamentContext } from '@/lib/api/tournaments';
 
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 
 interface Props {
   children: ReactNode;

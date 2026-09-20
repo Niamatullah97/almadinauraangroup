@@ -9,6 +9,7 @@ import { countParticipantLofts, formatCurrency, formatDate, formatStatus } from 
 import { buildPageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 
 interface Props {
   params: Promise<{ id: string }>;

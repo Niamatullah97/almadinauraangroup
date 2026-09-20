@@ -6,6 +6,7 @@ import { pickDefaultRaceDay } from '@/lib/default-race-day';
 import { buildPageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 
 interface Props {
   params: Promise<{ id: string }>;

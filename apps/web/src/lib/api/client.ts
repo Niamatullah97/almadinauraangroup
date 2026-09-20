@@ -18,6 +18,7 @@ export class ApiRequestError extends Error {
 }
 
 export type FetchApiOptions = RequestInit & {
+  /** Kept for callers; Next fetch cache is disabled on Cloudflare. */
   cacheSeconds?: number;
 };
 
@@ -56,24 +57,20 @@ async function fetchApiWithRetry<T>(path: string, init?: FetchApiOptions): Promi
 }
 
 async function fetchApiOnce<T>(path: string, init?: FetchApiOptions): Promise<T | null> {
-  const { cacheSeconds, ...requestInit } = init ?? {};
-  const cacheable = (requestInit.method ?? 'GET') === 'GET' && (cacheSeconds ?? 0) > 0;
+  const requestInit = { ...(init ?? {}) };
+  delete requestInit.cacheSeconds;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
+    // no-store on purpose: OpenNext's static-assets incremental cache is
+    // read-only, and force-cache/revalidate writes throw on every request
+    // (then burn CPU via waitUntil). That shows up as Error 1102.
     const fetchInit: RequestInit = {
       ...requestInit,
-      cache: cacheable ? 'force-cache' : 'no-store',
+      cache: 'no-store',
       signal: requestInit.signal ?? controller.signal,
     };
-
-    if (cacheable && cacheSeconds) {
-      Object.assign(fetchInit, {
-        next: { revalidate: cacheSeconds },
-        cf: { cacheTtl: cacheSeconds, cacheEverything: true },
-      });
-    }
 
     const res = await fetch(`${API_URL}${path}`, fetchInit);
 

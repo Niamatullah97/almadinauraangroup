@@ -1,13 +1,13 @@
 import { notFound } from 'next/navigation';
 
-import { ResultPageContent } from '@/components/results/ResultPageContent';
+import { ResultPageLoader } from '@/components/results/ResultPageLoader';
 import { LoadFailed } from '@/components/ui/LoadFailed';
-import { getDailyResults } from '@/lib/api/results';
 import { loadTournamentContext } from '@/lib/api/tournaments';
-import { countParticipantLofts, formatDate } from '@/lib/format';
+import { formatDate } from '@/lib/format';
 import { buildPageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 
 interface Props {
   params: Promise<{ id: string; raceDayId: string }>;
@@ -31,10 +31,7 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function DailyResultsPage({ params }: Props) {
   const { id, raceDayId } = await params;
-  const [{ tournament, raceDays, unavailable }, results] = await Promise.all([
-    loadTournamentContext(id),
-    getDailyResults(id, raceDayId),
-  ]);
+  const { tournament, raceDays, unavailable } = await loadTournamentContext(id);
 
   if (unavailable) {
     return <LoadFailed retryHref={`/tournaments/${id}/results/daily/${raceDayId}`} />;
@@ -45,22 +42,13 @@ export default async function DailyResultsPage({ params }: Props) {
   const raceDay = raceDays.find((day) => day.id === raceDayId);
   if (!raceDay) notFound();
 
-  if (!results) {
-    return <div className="empty-state">Daily results are not available yet.</div>;
-  }
-
-  const loftsCount = countParticipantLofts(results.rankings.map((row) => row.participantId));
-
   return (
-    <ResultPageContent
+    <ResultPageLoader
+      variant="daily"
+      tournamentId={id}
+      raceDayId={raceDayId}
       title={`${formatDate(raceDay.raceDate)} Results`}
       subtitle={`Race time ${raceDay.releaseTime} – ${raceDay.endTime}`}
-      summary={results.summary}
-      loftsCount={loftsCount}
-      firstWinner={results.firstWinner}
-      lastWinner={results.lastWinner}
-      averageWinner={results.averageWinner}
-      rankings={results.rankings}
     />
   );
 }

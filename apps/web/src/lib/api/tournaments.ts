@@ -4,6 +4,7 @@ import {
   TournamentDto,
   TournamentListResponse,
 } from '@kabootar/shared';
+import { cache } from 'react';
 
 import { fetchApi } from './client';
 import { getRaceDays } from './race-days';
@@ -41,7 +42,7 @@ export async function getTournament(id: string): Promise<TournamentDetailDto | n
   return fetchApi<TournamentDetailDto>(`/tournaments/${id}`, { cacheSeconds: LIST_CACHE_SECONDS });
 }
 
-export async function loadTournament(id: string): Promise<{
+export const loadTournament = cache(async function loadTournament(id: string): Promise<{
   tournament: TournamentDetailDto | null;
   unavailable: boolean;
 }> {
@@ -59,9 +60,11 @@ export async function loadTournament(id: string): Promise<{
     }
     return { tournament: null, unavailable: true };
   }
-}
+});
 
-export async function loadTournamentContext(id: string): Promise<{
+export const loadTournamentContext = cache(async function loadTournamentContext(
+  id: string,
+): Promise<{
   tournament: TournamentDetailDto | null;
   raceDays: RaceDayDto[];
   unavailable: boolean;
@@ -76,4 +79,4 @@ export async function loadTournamentContext(id: string): Promise<{
   } catch {
     return { tournament, raceDays: [], unavailable: false };
   }
-}
+});

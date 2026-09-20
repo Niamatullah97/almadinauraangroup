@@ -4,6 +4,7 @@ import { loadTournamentList } from '@/lib/api/tournaments';
 import { buildPageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 
 export const metadata = buildPageMetadata({
   title: 'Tournaments',

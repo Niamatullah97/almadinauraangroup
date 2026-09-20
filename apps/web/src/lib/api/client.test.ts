@@ -54,6 +54,25 @@ describe('fetchApi', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it('does not use Next fetch cache options that write on Cloudflare', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ success: true, data: { id: 't1' } }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await fetchApi('/tournaments/t1', { cacheSeconds: 30 });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:3000/api/v1/tournaments/t1',
+      expect.objectContaining({ cache: 'no-store' }),
+    );
+    const init = fetchMock.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(init.next).toBeUndefined();
+    expect(init.cf).toBeUndefined();
+  });
+
   it('dedupes concurrent requests to the same path', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
