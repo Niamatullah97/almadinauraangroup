@@ -1,3 +1,4 @@
+import { RaceDayStatus } from '@kabootar/shared';
 import { render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -59,6 +60,11 @@ vi.mock('@/lib/api/results', () => ({
   getTotalSingleNominatedResults: vi.fn(),
 }));
 
+vi.mock('@/lib/api/race-days', () => ({
+  getRaceDays: vi.fn(),
+}));
+
+import { getRaceDays } from '@/lib/api/race-days';
 import {
   getDailyResults,
   getTotalDoubleStampResults,
@@ -72,9 +78,11 @@ describe('ResultPageLoader', () => {
     vi.mocked(getTotalResults).mockReset();
     vi.mocked(getTotalDoubleStampResults).mockReset();
     vi.mocked(getTotalSingleNominatedResults).mockReset();
+    vi.mocked(getRaceDays).mockReset();
   });
 
   it('loads daily rankings in the browser instead of during SSR', async () => {
+    vi.mocked(getRaceDays).mockRejectedValue(new Error('worker timeout'));
     vi.mocked(getDailyResults).mockResolvedValue(dailyResult);
 
     render(
@@ -124,23 +132,31 @@ describe('ResultPageLoader', () => {
   it('loads total rankings with race-day columns in the browser', async () => {
     vi.mocked(getTotalResults).mockResolvedValue(totalResult);
     vi.mocked(getDailyResults).mockResolvedValue(dailyResult);
+    vi.mocked(getRaceDays).mockResolvedValue([
+      {
+        id: 'rd1',
+        tournamentId: 't1',
+        raceDate: '2026-09-20',
+        releaseTime: '06:00',
+        endTime: '18:00',
+        releaseLocation: 'Loft',
+        weatherNotes: null,
+        status: RaceDayStatus.LIVE,
+        createdAt: '2026-09-20T00:00:00.000Z',
+        updatedAt: '2026-09-20T00:00:00.000Z',
+      },
+    ]);
 
-    render(
-      <ResultPageLoader
-        variant="total"
-        tournamentId="t1"
-        title="Total Results"
-        raceDays={[{ id: 'rd1', label: '20 Sept 2026' }]}
-      />,
-    );
+    render(<ResultPageLoader variant="total" tournamentId="t1" title="Total Results" />);
 
     await waitFor(() => {
       expect(screen.getByText('Total Results')).toBeInTheDocument();
     });
     expect(screen.getByText('Ali Khan')).toBeInTheDocument();
-    expect(screen.getByText('20 Sept 2026')).toBeInTheDocument();
     expect(getTotalResults).toHaveBeenCalledWith('t1');
+    expect(getRaceDays).toHaveBeenCalledWith('t1');
     expect(getDailyResults).toHaveBeenCalledWith('t1', 'rd1');
+    expect(screen.getByText(/Combined results across 1 race day/)).toBeInTheDocument();
   });
 
   it('loads double-stamp rankings without winner cards', async () => {

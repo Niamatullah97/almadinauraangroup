@@ -4,6 +4,7 @@ import {
   DailyResultDto,
   DoubleStampResultDto,
   ParticipantResultRow,
+  RaceDayDto,
   ResultSummaryCounts,
   ResultWinner,
   TotalResultDto,
@@ -12,13 +13,14 @@ import { ReactNode, useEffect, useState } from 'react';
 
 import { ResultPageContent } from '@/components/results/ResultPageContent';
 import { TournamentTotalTable } from '@/components/ui/ResultCards';
+import { getRaceDays } from '@/lib/api/race-days';
 import {
   getDailyResults,
   getTotalDoubleStampResults,
   getTotalResults,
   getTotalSingleNominatedResults,
 } from '@/lib/api/results';
-import { countParticipantLofts } from '@/lib/format';
+import { countParticipantLofts, formatDate } from '@/lib/format';
 
 type CommonProps = {
   tournamentId: string;
@@ -29,12 +31,14 @@ type CommonProps = {
 export type ResultPageLoaderProps = CommonProps &
   (
     | { variant: 'daily'; raceDayId: string }
-    | { variant: 'total'; raceDays: Array<{ id: string; label: string }> }
+    | { variant: 'total'; raceDays?: Array<{ id: string; label: string }> }
     | { variant: 'double-stamp' }
     | { variant: 'single-nominated' }
   );
 
 interface LoadedResults {
+  title?: string;
+  subtitle?: string;
   summary: ResultSummaryCounts;
   loftsCount: number;
   firstWinner: ResultWinner | null;
@@ -87,8 +91,8 @@ export function ResultPageLoader(props: ResultPageLoaderProps) {
   const { data } = state;
   return (
     <ResultPageContent
-      title={props.title}
-      subtitle={props.subtitle}
+      title={data.title ?? props.title}
+      subtitle={data.subtitle ?? props.subtitle}
       summary={data.summary}
       loftsCount={data.loftsCount}
       firstWinner={data.firstWinner}
@@ -104,9 +108,13 @@ export function ResultPageLoader(props: ResultPageLoaderProps) {
 
 function fromResult(
   results: DailyResultDto | TotalResultDto | DoubleStampResultDto,
-  extras: Partial<Pick<LoadedResults, 'showWinners' | 'nominatedView' | 'rankingsContent'>> = {},
+  extras: Partial<
+    Pick<LoadedResults, 'title' | 'subtitle' | 'showWinners' | 'nominatedView' | 'rankingsContent'>
+  > = {},
 ): LoadedResults {
   return {
+    title: extras.title,
+    subtitle: extras.subtitle,
     summary: results.summary,
     loftsCount: countParticipantLofts(results.rankings.map((row) => row.participantId)),
     firstWinner: results.firstWinner,
@@ -123,16 +131,47 @@ function resultRequestKey(props: ResultPageLoaderProps): string {
   if (props.variant === 'daily') {
     return `${props.variant}:${props.tournamentId}:${props.raceDayId}`;
   }
-  if (props.variant === 'total') {
-    return `${props.variant}:${props.tournamentId}:${props.raceDays.map((day) => day.id).join(',')}`;
-  }
   return `${props.variant}:${props.tournamentId}`;
+}
+
+async function loadRaceDayColumns(
+  tournamentId: string,
+  provided?: Array<{ id: string; label: string }>,
+): Promise<Array<{ id: string; label: string }>> {
+  if (provided && provided.length > 0) {
+    return provided;
+  }
+
+  try {
+    const raceDays = await getRaceDays(tournamentId);
+    return raceDays.map((day) => ({ id: day.id, label: formatDate(day.raceDate) }));
+  } catch {
+    return [];
+  }
+}
+
+async function loadRaceDaysSafe(tournamentId: string): Promise<RaceDayDto[]> {
+  try {
+    return await getRaceDays(tournamentId);
+  } catch {
+    return [];
+  }
 }
 
 async function loadResults(props: ResultPageLoaderProps): Promise<LoadedResults | null> {
   if (props.variant === 'daily') {
-    const results = await getDailyResults(props.tournamentId, props.raceDayId);
-    return results ? fromResult(results) : null;
+    const [results, raceDays] = await Promise.all([
+      getDailyResults(props.tournamentId, props.raceDayId),
+      loadRaceDaysSafe(props.tournamentId),
+    ]);
+    if (!results) {
+      return null;
+    }
+    const raceDay = raceDays.find((day) => day.id === props.raceDayId);
+    return fromResult(results, {
+      title: raceDay ? `${formatDate(raceDay.raceDate)} Results` : props.title,
+      subtitle: raceDay ? `Race time ${raceDay.releaseTime} – ${raceDay.endTime}` : props.subtitle,
+    });
   }
 
   if (props.variant === 'double-stamp') {
@@ -149,22 +188,24 @@ async function loadResults(props: ResultPageLoaderProps): Promise<LoadedResults 
       : null;
   }
 
+  const raceDays = await loadRaceDayColumns(props.tournamentId, props.raceDays);
   const [results, dailyResults] = await Promise.all([
     getTotalResults(props.tournamentId),
-    Promise.all(props.raceDays.map((raceDay) => getDailyResults(props.tournamentId, raceDay.id))),
+    Promise.all(raceDays.map((raceDay) => getDailyResults(props.tournamentId, raceDay.id))),
   ]);
 
   if (!results) {
     return null;
   }
 
-  const raceDayResults = props.raceDays.map((raceDay, index) => ({
+  const raceDayResults = raceDays.map((raceDay, index) => ({
     id: raceDay.id,
     label: raceDay.label,
     results: dailyResults[index],
   }));
 
   return fromResult(results, {
+    subtitle: `Combined results across ${raceDays.length} race day${raceDays.length === 1 ? '' : 's'}.`,
     rankingsContent: (
       <TournamentTotalTable
         rows={results.rankings}

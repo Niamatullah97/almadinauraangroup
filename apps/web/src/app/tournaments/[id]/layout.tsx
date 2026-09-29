@@ -1,8 +1,6 @@
 import { ReactNode } from 'react';
 
-import { TournamentPageHeader } from '@/components/tournaments/TournamentPageHeader';
-import { LoadFailed } from '@/components/ui/LoadFailed';
-import { loadTournamentContext } from '@/lib/api/tournaments';
+import { TournamentFrame } from '@/components/tournaments/TournamentFrame';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
@@ -14,24 +12,10 @@ interface Props {
 
 export default async function TournamentLayout({ children, params }: Props) {
   const { id } = await params;
-  const { tournament, raceDays, unavailable } = await loadTournamentContext(id);
-
-  if (unavailable) {
-    return (
-      <div className="container" style={{ maxWidth: 1400 }}>
-        <LoadFailed retryHref={`/tournaments/${id}/results/total`} />
-      </div>
-    );
-  }
-
-  if (!tournament) {
-    return <>{children}</>;
-  }
 
   return (
     <div className="container" style={{ maxWidth: 1400 }}>
-      <TournamentPageHeader tournament={tournament} tournamentId={id} raceDays={raceDays} />
-      {children}
+      <TournamentFrame tournamentId={id}>{children}</TournamentFrame>
     </div>
   );
 }

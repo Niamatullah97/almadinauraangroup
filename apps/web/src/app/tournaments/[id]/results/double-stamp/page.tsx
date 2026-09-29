@@ -1,9 +1,5 @@
-import { notFound } from 'next/navigation';
-
 import { ResultPageLoader } from '@/components/results/ResultPageLoader';
-import { LoadFailed } from '@/components/ui/LoadFailed';
-import { loadTournament, loadTournamentContext } from '@/lib/api/tournaments';
-import { buildPageMetadata } from '@/lib/seo';
+import { buildTournamentPageMetadata } from '@/lib/tournament-metadata';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
@@ -14,29 +10,16 @@ interface Props {
 
 export async function generateMetadata({ params }: Props) {
   const { id } = await params;
-  const { tournament } = await loadTournament(id);
-
-  if (!tournament) {
-    return buildPageMetadata({ title: 'Results not found' });
-  }
-
-  return buildPageMetadata({
-    title: `${tournament.title} — Double Stamp Results`,
-    description: `Double stamp pigeon results for ${tournament.title}.`,
+  return buildTournamentPageMetadata(id, {
     path: `/tournaments/${id}/results/double-stamp`,
+    fallbackTitle: 'Double Stamp Results',
+    suffix: 'Double Stamp Results',
+    descriptionFor: (title) => `Double stamp pigeon results for ${title}.`,
   });
 }
 
 export default async function DoubleStampResultsPage({ params }: Props) {
   const { id } = await params;
-  const { tournament, unavailable } = await loadTournamentContext(id);
-
-  if (unavailable) {
-    return <LoadFailed retryHref={`/tournaments/${id}/results/double-stamp`} />;
-  }
-
-  if (!tournament) notFound();
-
   return (
     <ResultPageLoader
       variant="double-stamp"

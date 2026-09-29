@@ -1,9 +1,5 @@
-import { notFound, redirect } from 'next/navigation';
-
-import { LoadFailed } from '@/components/ui/LoadFailed';
-import { loadTournament, loadTournamentContext } from '@/lib/api/tournaments';
-import { pickDefaultRaceDay } from '@/lib/default-race-day';
-import { buildPageMetadata } from '@/lib/seo';
+import { TournamentHomeRedirect } from '@/components/tournaments/TournamentHomeRedirect';
+import { buildTournamentPageMetadata } from '@/lib/tournament-metadata';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
@@ -14,33 +10,14 @@ interface Props {
 
 export async function generateMetadata({ params }: Props) {
   const { id } = await params;
-  const { tournament } = await loadTournament(id);
-
-  if (!tournament) {
-    return buildPageMetadata({ title: 'Tournament not found' });
-  }
-
-  return buildPageMetadata({
-    title: tournament.title,
-    description: tournament.description ?? `View ${tournament.title} details and results.`,
+  return buildTournamentPageMetadata(id, {
     path: `/tournaments/${id}`,
+    fallbackTitle: 'Tournament',
+    descriptionFor: (title) => `View ${title} details and results.`,
   });
 }
 
 export default async function TournamentDetailPage({ params }: Props) {
   const { id } = await params;
-  const { tournament, raceDays, unavailable } = await loadTournamentContext(id);
-
-  if (unavailable) {
-    return <LoadFailed retryHref={`/tournaments/${id}`} />;
-  }
-
-  if (!tournament) notFound();
-
-  const defaultRaceDay = pickDefaultRaceDay(raceDays);
-  if (defaultRaceDay) {
-    redirect(`/tournaments/${id}/results/daily/${defaultRaceDay.id}`);
-  }
-
-  redirect(`/tournaments/${id}/results/total`);
+  return <TournamentHomeRedirect tournamentId={id} />;
 }

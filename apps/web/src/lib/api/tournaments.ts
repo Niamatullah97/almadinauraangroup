@@ -77,6 +77,8 @@ export const loadTournamentContext = cache(async function loadTournamentContext(
   try {
     return { tournament, raceDays: await getRaceDays(id), unavailable: false };
   } catch {
+    // Empty days here used to hide live race tabs and 404 daily URLs.
+    // Callers that still use this helper must treat [] as "unknown", not "none".
     return { tournament, raceDays: [], unavailable: false };
   }
 });
