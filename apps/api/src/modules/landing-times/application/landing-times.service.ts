@@ -51,6 +51,7 @@ export class LandingTimesService {
           include: {
             landingTimes: {
               where: { raceDayId, deletedAt: null },
+              orderBy: { updatedAt: 'desc' },
               take: 1,
             },
           },
@@ -157,52 +158,98 @@ export class LandingTimesService {
     const saved: PigeonLandingTime[] = [];
     const errors: { registrationPigeonId: string; message: string }[] = [];
     let skipped = 0;
+    const prepared: {
+      entry: BulkSaveLandingTimesDto['entries'][number];
+      landingTime: Date;
+    }[] = [];
 
     for (const entry of dto.entries) {
+      if (!entry.landingTime?.trim()) {
+        skipped += 1;
+        continue;
+      }
+
       try {
-        await this.validatePigeonOwnership(
-          tournamentId,
-          entry.participantId,
-          entry.registrationPigeonId,
-        );
-
-        if (!entry.landingTime?.trim()) {
-          skipped += 1;
-          continue;
-        }
-
-        const landingTime = this.parseAndValidateLandingTime(raceDay, entry.landingTime);
-        await this.applyNominatedFlags(entry.registrationPigeonId, entry, nominatedSettings);
-        const existing = await this.prisma.pigeonLandingTime.findFirst({
-          where: {
-            raceDayId,
-            registrationPigeonId: entry.registrationPigeonId,
-            deletedAt: null,
-          },
+        prepared.push({
+          entry,
+          landingTime: this.parseAndValidateLandingTime(raceDay, entry.landingTime),
         });
-
-        const record = existing
-          ? await this.prisma.pigeonLandingTime.update({
-              where: { id: existing.id },
-              data: { landingTime, participantId: entry.participantId },
-            })
-          : await this.prisma.pigeonLandingTime.create({
-              data: {
-                tournamentId,
-                raceDayId,
-                participantId: entry.participantId,
-                registrationPigeonId: entry.registrationPigeonId,
-                landingTime,
-              },
-            });
-
-        saved.push(record);
       } catch (error) {
         errors.push({
           registrationPigeonId: entry.registrationPigeonId,
           message: error instanceof Error ? error.message : 'Unable to save landing time',
         });
       }
+    }
+
+    if (prepared.length > 0) {
+      const pigeonIds = prepared.map((item) => item.entry.registrationPigeonId);
+      const [pigeons, existingRows] = await Promise.all([
+        this.prisma.registrationPigeon.findMany({
+          where: { id: { in: pigeonIds }, tournamentId, deletedAt: null },
+          select: { id: true, participantId: true },
+        }),
+        this.prisma.pigeonLandingTime.findMany({
+          where: { raceDayId, registrationPigeonId: { in: pigeonIds } },
+          orderBy: { updatedAt: 'desc' },
+        }),
+      ]);
+      const pigeonById = new Map(pigeons.map((pigeon) => [pigeon.id, pigeon]));
+      const existingByPigeon = new Map<string, PigeonLandingTime>();
+      for (const row of existingRows) {
+        if (!existingByPigeon.has(row.registrationPigeonId)) {
+          existingByPigeon.set(row.registrationPigeonId, row);
+        }
+      }
+
+      const writes: typeof prepared = [];
+      for (const item of prepared) {
+        const pigeon = pigeonById.get(item.entry.registrationPigeonId);
+        if (!pigeon || pigeon.participantId !== item.entry.participantId) {
+          errors.push({
+            registrationPigeonId: item.entry.registrationPigeonId,
+            message: 'Pigeon does not belong to this participant in the tournament',
+          });
+          continue;
+        }
+        writes.push(item);
+      }
+
+      await this.runInChunks(writes, 15, async (item) => {
+        try {
+          const existing = existingByPigeon.get(item.entry.registrationPigeonId);
+          const record = existing
+            ? await this.prisma.pigeonLandingTime.update({
+                where: { id: existing.id },
+                data: {
+                  landingTime: item.landingTime,
+                  participantId: item.entry.participantId,
+                  deletedAt: null,
+                },
+              })
+            : await this.prisma.pigeonLandingTime.create({
+                data: {
+                  tournamentId,
+                  raceDayId,
+                  participantId: item.entry.participantId,
+                  registrationPigeonId: item.entry.registrationPigeonId,
+                  landingTime: item.landingTime,
+                },
+              });
+
+          await this.applyNominatedFlags(
+            item.entry.registrationPigeonId,
+            item.entry,
+            nominatedSettings,
+          );
+          saved.push(record);
+        } catch (error) {
+          errors.push({
+            registrationPigeonId: item.entry.registrationPigeonId,
+            message: error instanceof Error ? error.message : 'Unable to save landing time',
+          });
+        }
+      });
     }
 
     await this.refreshWinners(tournamentId, raceDayId);
@@ -249,6 +296,16 @@ export class LandingTimesService {
 
   private async refreshWinners(tournamentId: string, raceDayId: string) {
     await this.resultsService.persistRaceDayWinners(tournamentId, raceDayId);
+  }
+
+  private async runInChunks<T>(
+    items: T[],
+    size: number,
+    worker: (item: T) => Promise<void>,
+  ): Promise<void> {
+    for (let index = 0; index < items.length; index += size) {
+      await Promise.all(items.slice(index, index + size).map((item) => worker(item)));
+    }
   }
 
   private async getRaceDayOrThrow(tournamentId: string, raceDayId: string) {

@@ -185,6 +185,24 @@ describe('LandingTimeEntryComponent', () => {
     ).toBe('08:05:22');
   });
 
+  it('reloads the entry sheet after save all', () => {
+    const landingTimeService = TestBed.inject(LandingTimeService);
+    fixture.componentInstance.onTournamentChange('tournament-1');
+    fixture.componentInstance.onRaceDayChange('race-day-1');
+    fixture.detectChanges();
+
+    const getEntrySheet = landingTimeService.getEntrySheet as jasmine.Spy;
+    expect(getEntrySheet.calls.count()).toBe(1);
+
+    const cell = fixture.componentInstance.participantRows()[0].cells[0]!;
+    cell.landingTime = '14:35:22';
+    fixture.componentInstance.saveAll();
+
+    expect(landingTimeService.bulkSave).toHaveBeenCalled();
+    expect(getEntrySheet.calls.count()).toBe(2);
+    expect(fixture.componentInstance.loading()).toBeFalse();
+  });
+
   it('does not auto-save unchanged landing times on blur', () => {
     const landingTimeService = TestBed.inject(LandingTimeService);
     fixture.componentInstance.onTournamentChange('tournament-1');

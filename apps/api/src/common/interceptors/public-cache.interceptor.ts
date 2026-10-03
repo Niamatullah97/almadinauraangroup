@@ -2,6 +2,12 @@ import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nes
 import { Observable, tap } from 'rxjs';
 
 function cacheControlFor(path: string): string | null {
+  // Landing sheets change while a race is being timed. A shared cache kept
+  // serving the previous sheet after a successful save.
+  if (path.includes('/landing-times')) {
+    return 'private, no-store';
+  }
+
   if (path.includes('/results')) {
     return 'public, s-maxage=10, stale-while-revalidate=30';
   }

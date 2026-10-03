@@ -1,5 +1,4 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
 import {
   BulkSaveLandingTimesRequest,
   BulkSaveLandingTimesResponse,
@@ -9,6 +8,7 @@ import {
   PigeonLandingTimeDto,
   UpdateLandingTimeRequest,
 } from '@kabootar/shared';
+import { Observable, map } from 'rxjs';
 
 import { ApiService } from '../../core/services/api.service';
 
@@ -24,7 +24,7 @@ export class LandingTimeService {
     return this.api
       .get<LandingTimeEntrySheetResponse>(
         `/tournaments/${tournamentId}/race-days/${raceDayId}/landing-times/entry-sheet`,
-        { participantId },
+        { participantId, _: Date.now() },
       )
       .pipe(map((response) => response.data as LandingTimeEntrySheetResponse));
   }
@@ -39,11 +39,7 @@ export class LandingTimeService {
         `/tournaments/${tournamentId}/race-days/${raceDayId}/landing-times`,
         { participantId },
       )
-      .pipe(
-        map(
-          (response) => response.data ?? { items: [], total: 0 },
-        ),
-      );
+      .pipe(map((response) => response.data ?? { items: [], total: 0 }));
   }
 
   create(

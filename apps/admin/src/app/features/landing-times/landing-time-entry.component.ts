@@ -474,14 +474,16 @@ export class LandingTimeEntryComponent implements OnInit {
     this.saveCells(cellsToSave, false);
   }
 
-  private loadEntrySheet(): void {
+  private loadEntrySheet(options?: { preserveTable?: boolean }): void {
     const tournamentId = this.selectedTournamentId();
     const raceDayId = this.selectedRaceDayId();
     if (!tournamentId || !raceDayId) return;
 
-    this.loading.set(true);
+    if (!options?.preserveTable) {
+      this.loading.set(true);
+      this.saveMessage.set(null);
+    }
     this.error.set(null);
-    this.saveMessage.set(null);
 
     this.landingTimeService
       .getEntrySheet(tournamentId, raceDayId, this.selectedParticipantId() || undefined)
@@ -608,6 +610,9 @@ export class LandingTimeEntryComponent implements OnInit {
           }
           this.saving.set(false);
           this.markCellsSaved(cellsToSave, response.errors);
+          if (!silent) {
+            this.loadEntrySheet({ preserveTable: true });
+          }
         },
         error: (err) => {
           this.error.set(this.extractErrorMessage(err));

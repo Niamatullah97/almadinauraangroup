@@ -36,6 +36,11 @@ describe('PublicCacheInterceptor', () => {
     );
   });
 
+  it('does not cache landing time sheets', () => {
+    const setHeader = run('GET', '/api/v1/tournaments/t1/race-days/r1/landing-times/entry-sheet');
+    expect(setHeader).toHaveBeenCalledWith('Cache-Control', 'private, no-store');
+  });
+
   it('does not cache mutating requests', () => {
     const setHeader = run('POST', '/api/v1/tournaments');
     expect(setHeader).not.toHaveBeenCalled();

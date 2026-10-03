@@ -191,8 +191,10 @@ describe('LandingTimesService', () => {
 
   it('bulk saves landing times with upsert', async () => {
     prisma.raceDay.findFirst.mockResolvedValue(raceDay);
-    prisma.registrationPigeon.findFirst.mockResolvedValue({ id: 'pigeon-1' });
-    prisma.pigeonLandingTime.findFirst.mockResolvedValue(null);
+    prisma.registrationPigeon.findMany.mockResolvedValue([
+      { id: 'pigeon-1', participantId: 'participant-1' },
+    ]);
+    prisma.pigeonLandingTime.findMany.mockResolvedValue([]);
     prisma.pigeonLandingTime.create.mockResolvedValue(landingTime);
 
     const result = await service.bulkSave('tournament-1', 'race-day-1', {
@@ -212,9 +214,11 @@ describe('LandingTimesService', () => {
   it('saves double stamp flag with landing times when tournament enables it', async () => {
     prisma.raceDay.findFirst.mockResolvedValue(raceDay);
     prisma.tournament.findFirst.mockResolvedValue({ doubleStampEnabled: true });
-    prisma.registrationPigeon.findFirst.mockResolvedValue({ id: 'pigeon-1' });
+    prisma.registrationPigeon.findMany.mockResolvedValue([
+      { id: 'pigeon-1', participantId: 'participant-1' },
+    ]);
     prisma.registrationPigeon.update.mockResolvedValue({ id: 'pigeon-1', isDoubleStamp: true });
-    prisma.pigeonLandingTime.findFirst.mockResolvedValue(null);
+    prisma.pigeonLandingTime.findMany.mockResolvedValue([]);
     prisma.pigeonLandingTime.create.mockResolvedValue(landingTime);
 
     const result = await service.bulkSave('tournament-1', 'race-day-1', {
@@ -233,6 +237,39 @@ describe('LandingTimesService', () => {
       data: { isDoubleStamp: true },
     });
     expect(result.saved).toHaveLength(1);
+  });
+
+  it('updates an existing landing time instead of leaving the previous clock time', async () => {
+    prisma.raceDay.findFirst.mockResolvedValue(raceDay);
+    prisma.registrationPigeon.findMany.mockResolvedValue([
+      { id: 'pigeon-1', participantId: 'participant-1' },
+    ]);
+    prisma.pigeonLandingTime.findMany.mockResolvedValue([landingTime]);
+    prisma.pigeonLandingTime.update.mockResolvedValue({
+      ...landingTime,
+      landingTime: new Date('2026-04-01T07:00:00+05:00'),
+    });
+
+    const result = await service.bulkSave('tournament-1', 'race-day-1', {
+      entries: [
+        {
+          participantId: 'participant-1',
+          registrationPigeonId: 'pigeon-1',
+          landingTime: '07:00:00',
+        },
+      ],
+    });
+
+    expect(prisma.pigeonLandingTime.update).toHaveBeenCalledWith({
+      where: { id: 'landing-1' },
+      data: {
+        landingTime: new Date('2026-04-01T07:00:00+05:00'),
+        participantId: 'participant-1',
+        deletedAt: null,
+      },
+    });
+    expect(prisma.pigeonLandingTime.create).not.toHaveBeenCalled();
+    expect(result.saved[0].landingTime).toBe('2026-04-01T02:00:00.000Z');
   });
 
   it('rejects duplicate pigeons in bulk payload', async () => {
