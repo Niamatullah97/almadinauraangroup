@@ -9,7 +9,18 @@ export function formatCurrency(value: number): string {
 }
 
 export function formatDate(value: string): string {
-  return new Intl.DateTimeFormat('en-PK', { dateStyle: 'medium' }).format(new Date(value));
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (!match) return value;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  // Date-only values are UTC midnight. Formatting in the visitor's timezone
+  // moves that midnight to the previous calendar day west of UTC.
+  return new Intl.DateTimeFormat('en-PK', {
+    dateStyle: 'medium',
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(year, month - 1, day)));
 }
 
 export function formatDuration(ms: number): string {
