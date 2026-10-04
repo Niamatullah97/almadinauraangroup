@@ -63,10 +63,11 @@ export interface UpdateLandingTimeRequest {
 export interface BulkLandingTimeEntryRequest {
   participantId: string;
   registrationPigeonId: string;
-  landingTime: string;
+  landingTime?: string | null;
   isDoubleStamp?: boolean;
   isSingleNominated?: boolean;
-  /** updatedAt from the sheet when it was opened. Stops an old page from overwriting a newer save. */
+  /** Removes the saved landing time for this pigeon. */
+  clear?: boolean;
   loadedUpdatedAt?: string | null;
 }
 
@@ -76,6 +77,7 @@ export interface BulkSaveLandingTimesRequest {
 
 export interface BulkSaveLandingTimesResponse {
   saved: PigeonLandingTimeDto[];
+  deleted: string[];
   skipped: number;
   errors: BulkLandingTimeError[];
 }

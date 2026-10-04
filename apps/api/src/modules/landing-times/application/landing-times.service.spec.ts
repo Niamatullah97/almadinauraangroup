@@ -273,27 +273,60 @@ describe('LandingTimesService', () => {
     expect(result.saved[0].landingTime).toBe('2026-04-01T02:00:00.000Z');
   });
 
-  it('does not overwrite a landing time saved after the sheet was opened', async () => {
+  it('saves an edited landing time even when the sheet timestamp is omitted', async () => {
     prisma.raceDay.findFirst.mockResolvedValue(raceDay);
     prisma.registrationPigeon.findMany.mockResolvedValue([
       { id: 'pigeon-1', participantId: 'participant-1' },
     ]);
     prisma.pigeonLandingTime.findMany.mockResolvedValue([landingTime]);
+    prisma.pigeonLandingTime.update.mockResolvedValue({
+      ...landingTime,
+      landingTime: new Date('2026-04-01T08:00:00+05:00'),
+    });
 
     const result = await service.bulkSave('tournament-1', 'race-day-1', {
       entries: [
         {
           participantId: 'participant-1',
           registrationPigeonId: 'pigeon-1',
-          landingTime: '07:00:00',
-          loadedUpdatedAt: '2025-12-31T00:00:00.000Z',
+          landingTime: '08:00:00',
         },
       ],
     });
 
-    expect(prisma.pigeonLandingTime.update).not.toHaveBeenCalled();
+    expect(prisma.pigeonLandingTime.update).toHaveBeenCalled();
+    expect(result.saved).toHaveLength(1);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it('soft-deletes a saved landing time when the entry is cleared', async () => {
+    prisma.raceDay.findFirst.mockResolvedValue(raceDay);
+    prisma.registrationPigeon.findMany.mockResolvedValue([
+      { id: 'pigeon-1', participantId: 'participant-1' },
+    ]);
+    prisma.pigeonLandingTime.findMany.mockResolvedValue([landingTime]);
+    prisma.pigeonLandingTime.update.mockResolvedValue({
+      ...landingTime,
+      deletedAt: new Date('2026-04-01T10:00:00.000Z'),
+    });
+
+    const result = await service.bulkSave('tournament-1', 'race-day-1', {
+      entries: [
+        {
+          participantId: 'participant-1',
+          registrationPigeonId: 'pigeon-1',
+          clear: true,
+        },
+      ],
+    });
+
+    expect(prisma.pigeonLandingTime.update).toHaveBeenCalledWith({
+      where: { id: 'landing-1' },
+      data: { deletedAt: expect.any(Date) },
+    });
+    expect(result.deleted).toEqual(['pigeon-1']);
     expect(result.saved).toHaveLength(0);
-    expect(result.errors[0].message).toContain('Reload the page');
+    expect(resultsService.persistRaceDayWinners).toHaveBeenCalledWith('tournament-1', 'race-day-1');
   });
 
   it('rejects duplicate pigeons in bulk payload', async () => {

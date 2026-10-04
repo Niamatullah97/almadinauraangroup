@@ -204,6 +204,46 @@ describe('LandingTimeEntryComponent', () => {
     expect(fixture.componentInstance.loading()).toBeFalse();
   });
 
+  it('saves a deleted landing time to the backend', () => {
+    const landingTimeService = TestBed.inject(LandingTimeService);
+    fixture.componentInstance.onTournamentChange('tournament-1');
+    fixture.componentInstance.onRaceDayChange('race-day-1');
+    fixture.detectChanges();
+
+    const cell = fixture.componentInstance.participantRows()[0].cells[0]!;
+    cell.landingTime = '14:35:22';
+    cell.savedLandingTime = '14:35:22';
+    cell.landingTimeId = 'landing-1';
+    fixture.componentInstance.deleteCell(cell);
+
+    expect(landingTimeService.bulkSave).toHaveBeenCalledWith('tournament-1', 'race-day-1', {
+      entries: [
+        jasmine.objectContaining({
+          registrationPigeonId: 'pigeon-1',
+          clear: true,
+        }),
+      ],
+    });
+    expect(cell.landingTime).toBe('');
+  });
+
+  it('includes a cleared pigeon when save all is clicked', () => {
+    const landingTimeService = TestBed.inject(LandingTimeService);
+    fixture.componentInstance.onTournamentChange('tournament-1');
+    fixture.componentInstance.onRaceDayChange('race-day-1');
+    fixture.detectChanges();
+
+    const cell = fixture.componentInstance.participantRows()[0].cells[0]!;
+    cell.landingTime = '';
+    cell.savedLandingTime = '14:35:22';
+    cell.landingTimeId = 'landing-1';
+    fixture.componentInstance.saveAll();
+
+    expect(landingTimeService.bulkSave).toHaveBeenCalledWith('tournament-1', 'race-day-1', {
+      entries: [jasmine.objectContaining({ clear: true })],
+    });
+  });
+
   it('does not save unchanged landing times from an old sheet', () => {
     const landingTimeService = TestBed.inject(LandingTimeService);
     fixture.componentInstance.onTournamentChange('tournament-1');

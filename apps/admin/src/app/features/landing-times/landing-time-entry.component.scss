@@ -202,8 +202,28 @@
   white-space: nowrap;
 }
 
+.landing-entry__delete {
+  align-self: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #b91c1c;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+}
+
 .landing-entry__save-message {
   margin-top: $spacing-md;
   color: $color-success;
   font-weight: 600;
+}
+
+.landing-entry__save-message--error {
+  color: #b91c1c;
 }

@@ -4,7 +4,6 @@ import {
   ArrayMinSize,
   IsArray,
   IsBoolean,
-  IsISO8601,
   IsOptional,
   IsString,
   IsUUID,
@@ -22,12 +21,13 @@ export class BulkLandingTimeEntryDto {
   @IsUUID()
   registrationPigeonId!: string;
 
-  @ApiProperty({ example: '14:35:22' })
+  @ApiPropertyOptional({ example: '14:35:22' })
+  @ValidateIf((entry: BulkLandingTimeEntryDto) => !entry.clear)
   @IsString()
   @Matches(/^(\d{2}:\d{2}(:\d{2})?|.+T.+)$/, {
     message: 'Landing time must be HH:mm, HH:mm:ss, or ISO datetime',
   })
-  landingTime!: string;
+  landingTime?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -39,10 +39,13 @@ export class BulkLandingTimeEntryDto {
   @IsBoolean()
   isSingleNominated?: boolean;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  clear?: boolean;
+
   @ApiPropertyOptional({ nullable: true })
   @IsOptional()
-  @ValidateIf((_, value) => value !== null)
-  @IsISO8601()
   loadedUpdatedAt?: string | null;
 }
 

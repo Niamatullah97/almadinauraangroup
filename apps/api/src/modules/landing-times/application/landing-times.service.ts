@@ -157,16 +157,18 @@ export class LandingTimesService {
     }
 
     const saved: PigeonLandingTime[] = [];
+    const deleted: string[] = [];
     const errors: { registrationPigeonId: string; message: string }[] = [];
-    let skipped = 0;
+    const skipped = 0;
     const prepared: {
       entry: BulkSaveLandingTimesDto['entries'][number];
       landingTime: Date;
     }[] = [];
+    const clears: BulkSaveLandingTimesDto['entries'] = [];
 
     for (const entry of dto.entries) {
-      if (!entry.landingTime?.trim()) {
-        skipped += 1;
+      if (entry.clear || !entry.landingTime?.trim()) {
+        clears.push(entry);
         continue;
       }
 
@@ -183,8 +185,12 @@ export class LandingTimesService {
       }
     }
 
-    if (prepared.length > 0) {
-      const pigeonIds = prepared.map((item) => item.entry.registrationPigeonId);
+    const pigeonIds = [
+      ...prepared.map((item) => item.entry.registrationPigeonId),
+      ...clears.map((entry) => entry.registrationPigeonId),
+    ];
+
+    if (pigeonIds.length > 0) {
       const [pigeons, existingRows] = await Promise.all([
         this.prisma.registrationPigeon.findMany({
           where: { id: { in: pigeonIds }, tournamentId, deletedAt: null },
@@ -203,30 +209,31 @@ export class LandingTimesService {
         }
       }
 
-      const writes: typeof prepared = [];
-      for (const item of prepared) {
-        const pigeon = pigeonById.get(item.entry.registrationPigeonId);
-        if (!pigeon || pigeon.participantId !== item.entry.participantId) {
+      const ownsPigeon = (entry: BulkSaveLandingTimesDto['entries'][number]) => {
+        const pigeon = pigeonById.get(entry.registrationPigeonId);
+        if (!pigeon || pigeon.participantId !== entry.participantId) {
           errors.push({
-            registrationPigeonId: item.entry.registrationPigeonId,
+            registrationPigeonId: entry.registrationPigeonId,
             message: 'Pigeon does not belong to this participant in the tournament',
           });
-          continue;
+          return false;
         }
-        writes.push(item);
+        return true;
+      };
+
+      const writes: typeof prepared = [];
+      for (const item of prepared) {
+        if (ownsPigeon(item.entry)) writes.push(item);
+      }
+
+      const clearWrites: BulkSaveLandingTimesDto['entries'] = [];
+      for (const entry of clears) {
+        if (ownsPigeon(entry)) clearWrites.push(entry);
       }
 
       await this.runInChunks(writes, 15, async (item) => {
         try {
           const existing = existingByPigeon.get(item.entry.registrationPigeonId);
-          if (
-            existing &&
-            !this.loadedVersionMatches(existing.updatedAt, item.entry.loadedUpdatedAt)
-          ) {
-            throw new ConflictException(
-              'This landing time was saved again after the sheet was opened. Reload the page before saving.',
-            );
-          }
           const record = existing
             ? await this.prisma.pigeonLandingTime.update({
                 where: { id: existing.id },
@@ -259,12 +266,31 @@ export class LandingTimesService {
           });
         }
       });
+
+      await this.runInChunks(clearWrites, 15, async (entry) => {
+        try {
+          const existing = existingByPigeon.get(entry.registrationPigeonId);
+          if (existing && !existing.deletedAt) {
+            await this.prisma.pigeonLandingTime.update({
+              where: { id: existing.id },
+              data: { deletedAt: new Date() },
+            });
+          }
+          deleted.push(entry.registrationPigeonId);
+        } catch (error) {
+          errors.push({
+            registrationPigeonId: entry.registrationPigeonId,
+            message: error instanceof Error ? error.message : 'Unable to delete landing time',
+          });
+        }
+      });
     }
 
     await this.refreshWinners(tournamentId, raceDayId);
 
     return {
       saved: saved.map((item) => this.mapLandingTime(item)),
+      deleted,
       skipped,
       errors,
     };
@@ -301,13 +327,6 @@ export class LandingTimesService {
 
     await this.refreshWinners(tournamentId, raceDayId);
     return this.mapLandingTime(record);
-  }
-
-  private loadedVersionMatches(storedUpdatedAt: Date, loadedUpdatedAt?: string | null): boolean {
-    if (!loadedUpdatedAt) return false;
-    const loaded = new Date(loadedUpdatedAt);
-    if (Number.isNaN(loaded.getTime())) return false;
-    return Math.abs(storedUpdatedAt.getTime() - loaded.getTime()) <= 1;
   }
 
   private async refreshWinners(tournamentId: string, raceDayId: string) {

@@ -25,6 +25,7 @@ interface EntryCell {
   registrationId: string;
   registrationPigeonId: string;
   pigeonNumber: number;
+  landingTimeId: string | null;
   landingTime: string;
   isDoubleStamp: boolean;
   isSingleNominated: boolean;
@@ -251,6 +252,16 @@ interface ParticipantEntryRow {
                               Nominated
                             </label>
                           }
+                          @if (cell.landingTime || cell.savedLandingTime) {
+                            <button
+                              type="button"
+                              class="landing-entry__delete"
+                              [disabled]="!canEnterTimes() || saving()"
+                              (click)="deleteCell(cell)"
+                            >
+                              Delete
+                            </button>
+                          }
                           @if (cell.error) {
                             <p class="form-error">{{ cell.error }}</p>
                           }
@@ -269,7 +280,12 @@ interface ParticipantEntryRow {
       </div>
 
       @if (saveMessage()) {
-        <p class="landing-entry__save-message">{{ saveMessage() }}</p>
+        <p
+          class="landing-entry__save-message"
+          [class.landing-entry__save-message--error]="saveFailed()"
+        >
+          {{ saveMessage() }}
+        </p>
       }
     </section>
   `,
@@ -304,6 +320,7 @@ export class LandingTimeEntryComponent implements OnInit {
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
   readonly saveMessage = signal<string | null>(null);
+  readonly saveFailed = signal(false);
 
   autoSave = true;
 
@@ -351,7 +368,13 @@ export class LandingTimeEntryComponent implements OnInit {
 
   canSave(): boolean {
     const sheet = this.entrySheet();
-    return !!sheet && this.canEnterTimes() && this.allCells().some((cell) => cell.landingTime);
+    return (
+      !!sheet &&
+      this.canEnterTimes() &&
+      this.allCells().some(
+        (cell) => cell.landingTime || cell.savedLandingTime || cell.landingTimeId,
+      )
+    );
   }
 
   canEnterTimes(): boolean {
@@ -423,6 +446,9 @@ export class LandingTimeEntryComponent implements OnInit {
     const trimmed = cell.landingTime.trim();
     if (!trimmed) {
       cell.error = null;
+      if (this.autoSave && this.cellHasSavedTime(cell) && this.cellIsDirty(cell)) {
+        this.saveCells([cell], true);
+      }
       return;
     }
 
@@ -460,10 +486,21 @@ export class LandingTimeEntryComponent implements OnInit {
       });
   }
 
+  deleteCell(cell: EntryCell): void {
+    const hadSavedTime = this.cellHasSavedTime(cell);
+    cell.landingTime = '';
+    cell.error = null;
+    if (!hadSavedTime) return;
+    this.saveCells([cell], false);
+  }
+
   saveAll(): void {
     const cellsToSave = this.allCells().filter((cell) => {
       try {
-        if (!cell.landingTime.trim()) return false;
+        if (!cell.landingTime.trim()) {
+          cell.error = null;
+          return this.cellHasSavedTime(cell) && this.cellIsDirty(cell);
+        }
         cell.landingTime = normalizeLandingTimeInput(cell.landingTime);
         cell.error = this.landingWindowError(cell.landingTime);
         return cell.error === null && this.cellIsDirty(cell);
@@ -473,6 +510,7 @@ export class LandingTimeEntryComponent implements OnInit {
       }
     });
     if (cellsToSave.length === 0) {
+      this.saveFailed.set(false);
       this.saveMessage.set('No new landing times to save.');
       return;
     }
@@ -526,6 +564,7 @@ export class LandingTimeEntryComponent implements OnInit {
             registrationId: pigeon.registrationId,
             registrationPigeonId: pigeon.registrationPigeonId,
             pigeonNumber: pigeon.pigeonNumber,
+            landingTimeId: pigeon.landingTimeId,
             landingTime: pigeon.landingTime ?? '',
             isDoubleStamp: pigeon.isDoubleStamp,
             isSingleNominated: pigeon.isSingleNominated,
@@ -595,34 +634,49 @@ export class LandingTimeEntryComponent implements OnInit {
     if (!tournamentId || !raceDayId || cellsToSave.length === 0) return;
 
     this.saving.set(true);
+    this.saveFailed.set(false);
     this.saveMessage.set(null);
     this.clearCellErrors();
 
     this.landingTimeService
       .bulkSave(tournamentId, raceDayId, {
-        entries: cellsToSave.map((cell) => ({
-          participantId: cell.participantId,
-          registrationPigeonId: cell.registrationPigeonId,
-          landingTime: cell.landingTime,
-          loadedUpdatedAt: cell.loadedUpdatedAt,
-          ...(this.doubleStampEnabled() && { isDoubleStamp: cell.isDoubleStamp }),
-          ...(this.singleNominatedEnabled() && { isSingleNominated: cell.isSingleNominated }),
-        })),
+        entries: cellsToSave.map((cell) => {
+          const clearing = !cell.landingTime.trim();
+          return {
+            participantId: cell.participantId,
+            registrationPigeonId: cell.registrationPigeonId,
+            ...(clearing
+              ? { clear: true }
+              : {
+                  landingTime: cell.landingTime,
+                  ...(this.doubleStampEnabled() && { isDoubleStamp: cell.isDoubleStamp }),
+                  ...(this.singleNominatedEnabled() && {
+                    isSingleNominated: cell.isSingleNominated,
+                  }),
+                }),
+          };
+        }),
       })
       .subscribe({
         next: (response) => {
           this.applyBulkErrors(response.errors);
+          this.markCellsSaved(cellsToSave, response);
           if (!silent) {
-            this.saveMessage.set(`Saved ${response.saved.length} landing time(s).`);
+            this.saveMessage.set(this.saveResultMessage(response));
+            this.saveFailed.set(
+              response.errors.length > 0 &&
+                response.saved.length === 0 &&
+                (response.deleted?.length ?? 0) === 0,
+            );
           }
           this.saving.set(false);
-          this.markCellsSaved(cellsToSave, response);
           if (!silent) {
             this.loadEntrySheet({ preserveTable: true });
           }
         },
         error: (err) => {
-          this.error.set(this.extractErrorMessage(err));
+          this.saveFailed.set(true);
+          this.saveMessage.set(this.extractErrorMessage(err));
           this.saving.set(false);
         },
       });
@@ -636,10 +690,36 @@ export class LandingTimeEntryComponent implements OnInit {
     );
   }
 
+  private cellHasSavedTime(cell: EntryCell): boolean {
+    return !!cell.savedLandingTime || !!cell.landingTimeId;
+  }
+
+  private saveResultMessage(response: {
+    saved: unknown[];
+    deleted?: string[];
+    errors: unknown[];
+  }): string {
+    const deletedCount = response.deleted?.length ?? 0;
+    const parts: string[] = [];
+    if (response.saved.length > 0) {
+      parts.push(`Saved ${response.saved.length} landing time(s).`);
+    }
+    if (deletedCount > 0) {
+      parts.push(`Deleted ${deletedCount} landing time(s).`);
+    }
+    if (parts.length === 0) {
+      return response.errors.length > 0
+        ? 'Landing times could not be saved.'
+        : 'No new landing times to save.';
+    }
+    return parts.join(' ');
+  }
+
   private markCellsSaved(
     cellsToSave: EntryCell[],
     response: {
       saved: { registrationPigeonId: string; updatedAt: string }[];
+      deleted?: string[];
       errors: { registrationPigeonId: string }[];
     },
   ): void {
@@ -647,8 +727,18 @@ export class LandingTimeEntryComponent implements OnInit {
     const savedAt = new Map(
       response.saved.map((item) => [item.registrationPigeonId, item.updatedAt]),
     );
+    const deletedIds = new Set(response.deleted ?? []);
     for (const cell of cellsToSave) {
       if (failedIds.has(cell.registrationPigeonId)) continue;
+      if (deletedIds.has(cell.registrationPigeonId) || !cell.landingTime.trim()) {
+        cell.landingTime = '';
+        cell.savedLandingTime = '';
+        cell.landingTimeId = null;
+        cell.loadedUpdatedAt = null;
+        cell.savedIsDoubleStamp = cell.isDoubleStamp;
+        cell.savedIsSingleNominated = cell.isSingleNominated;
+        continue;
+      }
       cell.savedLandingTime = cell.landingTime;
       cell.savedIsDoubleStamp = cell.isDoubleStamp;
       cell.savedIsSingleNominated = cell.isSingleNominated;
