@@ -33,6 +33,7 @@ interface EntryCell {
   savedIsDoubleStamp: boolean;
   savedIsSingleNominated: boolean;
   savedIsPending: boolean;
+  loadedUpdatedAt: string | null;
   error: string | null;
 }
 
@@ -465,12 +466,16 @@ export class LandingTimeEntryComponent implements OnInit {
         if (!cell.landingTime.trim()) return false;
         cell.landingTime = normalizeLandingTimeInput(cell.landingTime);
         cell.error = this.landingWindowError(cell.landingTime);
-        return cell.error === null;
+        return cell.error === null && this.cellIsDirty(cell);
       } catch {
         cell.error = 'Use HH:mm:ss';
         return false;
       }
     });
+    if (cellsToSave.length === 0) {
+      this.saveMessage.set('No new landing times to save.');
+      return;
+    }
     this.saveCells(cellsToSave, false);
   }
 
@@ -529,6 +534,7 @@ export class LandingTimeEntryComponent implements OnInit {
             savedIsDoubleStamp: pigeon.isDoubleStamp,
             savedIsSingleNominated: pigeon.isSingleNominated,
             savedIsPending: pigeon.isPending,
+            loadedUpdatedAt: pigeon.updatedAt,
             error: null,
           } satisfies EntryCell,
         ]),
@@ -598,6 +604,7 @@ export class LandingTimeEntryComponent implements OnInit {
           participantId: cell.participantId,
           registrationPigeonId: cell.registrationPigeonId,
           landingTime: cell.landingTime,
+          loadedUpdatedAt: cell.loadedUpdatedAt,
           ...(this.doubleStampEnabled() && { isDoubleStamp: cell.isDoubleStamp }),
           ...(this.singleNominatedEnabled() && { isSingleNominated: cell.isSingleNominated }),
         })),
@@ -609,7 +616,7 @@ export class LandingTimeEntryComponent implements OnInit {
             this.saveMessage.set(`Saved ${response.saved.length} landing time(s).`);
           }
           this.saving.set(false);
-          this.markCellsSaved(cellsToSave, response.errors);
+          this.markCellsSaved(cellsToSave, response);
           if (!silent) {
             this.loadEntrySheet({ preserveTable: true });
           }
@@ -631,14 +638,21 @@ export class LandingTimeEntryComponent implements OnInit {
 
   private markCellsSaved(
     cellsToSave: EntryCell[],
-    errors: { registrationPigeonId: string }[],
+    response: {
+      saved: { registrationPigeonId: string; updatedAt: string }[];
+      errors: { registrationPigeonId: string }[];
+    },
   ): void {
-    const failedIds = new Set(errors.map((item) => item.registrationPigeonId));
+    const failedIds = new Set(response.errors.map((item) => item.registrationPigeonId));
+    const savedAt = new Map(
+      response.saved.map((item) => [item.registrationPigeonId, item.updatedAt]),
+    );
     for (const cell of cellsToSave) {
       if (failedIds.has(cell.registrationPigeonId)) continue;
       cell.savedLandingTime = cell.landingTime;
       cell.savedIsDoubleStamp = cell.isDoubleStamp;
       cell.savedIsSingleNominated = cell.isSingleNominated;
+      cell.loadedUpdatedAt = savedAt.get(cell.registrationPigeonId) ?? cell.loadedUpdatedAt;
     }
   }
 

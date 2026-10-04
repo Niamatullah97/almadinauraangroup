@@ -85,6 +85,7 @@ describe('LandingTimeEntryComponent', () => {
                         ringNumber: 'PK-001',
                         landingTimeId: null,
                         landingTime: null,
+                        updatedAt: null,
                         isDoubleStamp: false,
                         isSingleNominated: false,
                         isPending: false,
@@ -201,6 +202,21 @@ describe('LandingTimeEntryComponent', () => {
     expect(landingTimeService.bulkSave).toHaveBeenCalled();
     expect(getEntrySheet.calls.count()).toBe(2);
     expect(fixture.componentInstance.loading()).toBeFalse();
+  });
+
+  it('does not save unchanged landing times from an old sheet', () => {
+    const landingTimeService = TestBed.inject(LandingTimeService);
+    fixture.componentInstance.onTournamentChange('tournament-1');
+    fixture.componentInstance.onRaceDayChange('race-day-1');
+    fixture.detectChanges();
+
+    const cell = fixture.componentInstance.participantRows()[0].cells[0]!;
+    cell.landingTime = '14:35:22';
+    cell.savedLandingTime = '14:35:22';
+    fixture.componentInstance.saveAll();
+
+    expect(landingTimeService.bulkSave).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.saveMessage()).toBe('No new landing times to save.');
   });
 
   it('does not auto-save unchanged landing times on blur', () => {

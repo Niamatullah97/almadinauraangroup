@@ -4,10 +4,12 @@ import {
   ArrayMinSize,
   IsArray,
   IsBoolean,
+  IsISO8601,
   IsOptional,
   IsString,
   IsUUID,
   Matches,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 
@@ -36,6 +38,12 @@ export class BulkLandingTimeEntryDto {
   @IsOptional()
   @IsBoolean()
   isSingleNominated?: boolean;
+
+  @ApiPropertyOptional({ nullable: true })
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsISO8601()
+  loadedUpdatedAt?: string | null;
 }
 
 export class BulkSaveLandingTimesDto {

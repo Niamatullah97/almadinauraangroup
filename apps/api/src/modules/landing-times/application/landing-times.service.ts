@@ -85,6 +85,7 @@ export class LandingTimesService {
             ringNumber: pigeon.ringNumber,
             landingTimeId: landing?.id ?? null,
             landingTime: landing ? formatLandingTimeForInput(landing.landingTime) : null,
+            updatedAt: landing?.updatedAt.toISOString() ?? null,
             isDoubleStamp: pigeon.isDoubleStamp,
             isSingleNominated: pigeon.isSingleNominated ?? false,
             isPending: pigeon.isPending ?? false,
@@ -218,6 +219,14 @@ export class LandingTimesService {
       await this.runInChunks(writes, 15, async (item) => {
         try {
           const existing = existingByPigeon.get(item.entry.registrationPigeonId);
+          if (
+            existing &&
+            !this.loadedVersionMatches(existing.updatedAt, item.entry.loadedUpdatedAt)
+          ) {
+            throw new ConflictException(
+              'This landing time was saved again after the sheet was opened. Reload the page before saving.',
+            );
+          }
           const record = existing
             ? await this.prisma.pigeonLandingTime.update({
                 where: { id: existing.id },
@@ -292,6 +301,13 @@ export class LandingTimesService {
 
     await this.refreshWinners(tournamentId, raceDayId);
     return this.mapLandingTime(record);
+  }
+
+  private loadedVersionMatches(storedUpdatedAt: Date, loadedUpdatedAt?: string | null): boolean {
+    if (!loadedUpdatedAt) return false;
+    const loaded = new Date(loadedUpdatedAt);
+    if (Number.isNaN(loaded.getTime())) return false;
+    return Math.abs(storedUpdatedAt.getTime() - loaded.getTime()) <= 1;
   }
 
   private async refreshWinners(tournamentId: string, raceDayId: string) {

@@ -256,6 +256,7 @@ describe('LandingTimesService', () => {
           participantId: 'participant-1',
           registrationPigeonId: 'pigeon-1',
           landingTime: '07:00:00',
+          loadedUpdatedAt: landingTime.updatedAt.toISOString(),
         },
       ],
     });
@@ -270,6 +271,29 @@ describe('LandingTimesService', () => {
     });
     expect(prisma.pigeonLandingTime.create).not.toHaveBeenCalled();
     expect(result.saved[0].landingTime).toBe('2026-04-01T02:00:00.000Z');
+  });
+
+  it('does not overwrite a landing time saved after the sheet was opened', async () => {
+    prisma.raceDay.findFirst.mockResolvedValue(raceDay);
+    prisma.registrationPigeon.findMany.mockResolvedValue([
+      { id: 'pigeon-1', participantId: 'participant-1' },
+    ]);
+    prisma.pigeonLandingTime.findMany.mockResolvedValue([landingTime]);
+
+    const result = await service.bulkSave('tournament-1', 'race-day-1', {
+      entries: [
+        {
+          participantId: 'participant-1',
+          registrationPigeonId: 'pigeon-1',
+          landingTime: '07:00:00',
+          loadedUpdatedAt: '2025-12-31T00:00:00.000Z',
+        },
+      ],
+    });
+
+    expect(prisma.pigeonLandingTime.update).not.toHaveBeenCalled();
+    expect(result.saved).toHaveLength(0);
+    expect(result.errors[0].message).toContain('Reload the page');
   });
 
   it('rejects duplicate pigeons in bulk payload', async () => {

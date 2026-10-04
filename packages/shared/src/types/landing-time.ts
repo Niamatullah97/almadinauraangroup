@@ -18,6 +18,8 @@ export interface LandingTimePigeonRowDto {
   ringNumber: string;
   landingTimeId: string | null;
   landingTime: string | null;
+  /** When this landing row was last saved. Null when the pigeon has no time yet. */
+  updatedAt: string | null;
   isDoubleStamp: boolean;
   isSingleNominated: boolean;
   isPending: boolean;
@@ -64,6 +66,8 @@ export interface BulkLandingTimeEntryRequest {
   landingTime: string;
   isDoubleStamp?: boolean;
   isSingleNominated?: boolean;
+  /** updatedAt from the sheet when it was opened. Stops an old page from overwriting a newer save. */
+  loadedUpdatedAt?: string | null;
 }
 
 export interface BulkSaveLandingTimesRequest {
